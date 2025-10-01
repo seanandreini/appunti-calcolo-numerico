@@ -1,0 +1,117 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+% Ambienti personalizzati per definizioni ed esercizi
+\newtheorem{definition}{Definizione}[section]
+\newtheorem{esercizio}{Esercizio}[section]
+
+\title{Appunti di Calcolo Numerico}
+\author{} % Lasciato vuoto o da compilare
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section*{Introduzione}
+
+Molti problemi derivanti da applicazioni pratiche sono descritti tramite un modello matematico. Una volta che le equazioni del modello sono risolte, è possibile fare inferenza sul fenomeno studiato. Tuttavia, la soluzione di tali equazioni non è quasi mai direttamente disponibile, rendendo necessario l'utilizzo di metodi numerici e tecniche di approssimazione.
+
+Questi metodi devono soddisfare alcuni requisiti fondamentali:
+\begin{itemize}
+    \item \textbf{Accuratezza}: La soluzione approssimata deve essere sufficientemente "vicina" alla soluzione esatta, in base alle specifiche del problema.
+    \item \textbf{Facilità di implementazione}: La formulazione del metodo deve consentire una semplice traduzione in un algoritmo da codificare in un opportuno linguaggio di programmazione.
+\end{itemize}
+
+\section{Sorgenti e Misure dell'Errore}
+
+Il risultato fornito da un metodo numerico è quasi sempre affetto da errore. L'errore commesso è determinato da più cause, spesso intercalate tra loro.
+
+\subsection{Misure dell'Errore}
+Supponiamo che $x \in \mathbb{R}$ sia il dato esatto e $\tilde{x}$ la sua approssimazione.
+
+\begin{definition}[Errore Assoluto]
+L'errore assoluto è definito come la differenza:
+$$ \Delta x = \tilde{x} - x $$
+da cui segue $\tilde{x} = x + \Delta x$.
+\end{definition}
+
+Questa misura da sola non è completamente esaustiva. Ad esempio, un errore $|\Delta x| = 10^{-6}$ potrebbe essere considerato "grande" o "piccolo" solo rapportandolo al valore esatto $x$.
+
+\begin{definition}[Errore Relativo]
+Per ovviare a questo problema, se $x \neq 0$, si introduce l'errore relativo:
+$$ \epsilon_x = \frac{\Delta x}{x} = \frac{\tilde{x} - x}{x} $$
+\end{definition}
+
+Dalla definizione segue che:
+$$ \tilde{x} = x(1 + \epsilon_x) \quad \text{ovvero} \quad \frac{\tilde{x}}{x} = 1 + \epsilon_x $$
+Questo mostra che l'errore relativo $\epsilon_x$ deve essere confrontato con 1. Un errore relativo $|\epsilon_x|=10^{-6}$ fornisce un'informazione più "assoluta" sulla qualità dell'approssimazione.
+
+\subsection{Tipologie Principali di Errore}
+È possibile individuare, almeno a livello concettuale, tre tipologie principali di errore:
+\begin{enumerate}
+    \item Errori di discretizzazione (o troncamento);
+    \item Errori di convergenza (nei tuoi appunti "errori di iterazione");
+    \item Errori di round-off (o arrotondamento).
+\end{enumerate}
+
+\subsubsection{Errori di Discretizzazione (o Troncamento)}
+Questi errori nascono quando un problema matematico formulato nel continuo viene sostituito da un problema discreto che lo approssima.
+
+Ad esempio, per calcolare la derivata di una funzione $f(x)$ in un punto $x_0$, si parte dalla definizione:
+$$ f'(x_0) = \lim_{h \to 0} \frac{f(x_0+h) - f(x_0)}{h} $$
+Per il calcolo numerico, si utilizza un valore di $h>0$ "piccolo" ma finito, approssimando la derivata con il rapporto incrementale:
+$$ f'(x_0) \approx \frac{f(x_0+h) - f(x_0)}{h} $$
+L'errore di troncamento commesso è la differenza tra le due quantità.
+Considerando lo sviluppo in serie di Taylor di $f(x+h)$ centrato in $x$:
+$$ f(x+h) = f(x) + h f'(x) + \frac{h^2}{2} f''(x) + O(h^3) $$
+si può isolare il rapporto incrementale e stimare l'errore:
+$$ \frac{f(x+h) - f(x)}{h} = f'(x) + \frac{h}{2}f''(x) + O(h^2) $$
+L'errore di troncamento è quindi del primo ordine rispetto ad $h$, ovvero $O(h)$.
+
+\begin{esercizio}
+Dimostrare che, se $f(x)$ è sufficientemente regolare, allora:
+$$ f''(x) = \frac{f(x-h) - 2f(x) + f(x+h)}{h^2} + O(h^2) $$
+\end{esercizio}
+
+\subsubsection{Errori di Convergenza (o Iterazione)}
+Molti metodi numerici sono di tipo iterativo: non forniscono la soluzione esatta $x^*$, ma generano una successione di approssimazioni $\{x_n\}$. A partire da un'approssimazione iniziale $x_0$, le approssimazioni successive sono definite da una funzione di iterazione $\Phi(x)$:
+$$ x_{n+1} = \Phi(x_n), \quad n=0, 1, 2, \dots $$
+
+\begin{definition}[Metodo Convergente]
+Un metodo iterativo si dice convergente se la successione delle approssimazioni tende alla soluzione esatta:
+$$ \lim_{n \to \infty} x_n = x^* $$
+\end{definition}
+
+Poiché è possibile eseguire solo un numero finito di iterazioni, il processo viene arrestato a un indice $N$, e si utilizza $x_N$ come approssimazione di $x^*$. L'errore $x^* - x_N$ è detto errore di convergenza (o di iterazione). L'indice $N$ è tipicamente determinato dinamicamente tramite un criterio di arresto.
+
+\begin{esercizio}
+La successione definita da $x_0 = 2$ e
+$$ x_{n+1} = \frac{1}{2}\left(x_n + \frac{2}{x_n}\right) $$
+converge a $\sqrt{2}$. Calcolare le prime iterate.
+\end{esercizio}
+
+\subsubsection{Errori di Round-off}
+Questi errori sono dovuti all'utilizzo dell'aritmetica finita di un calcolatore. In particolare, gli errori di rappresentazione nascono dal fatto che non tutti i numeri possono essere rappresentati esattamente nella memoria di un computer.
+Analizzeremo la rappresentazione di numeri interi e reali.
+
+\paragraph{Numeri Interi}
+Fissata una base di rappresentazione $b$ e un numero di cifre $N$, un numero intero viene memorizzato tramite una stringa del tipo:
+$$ \alpha_0 \alpha_1 \dots \alpha_N $$
+dove $\alpha_0 \in \{+,-\}$ è il segno e $\alpha_i \in \{0, 1, \dots, b-1\}$ sono le cifre. A questa stringa corrisponde il valore:
+\[ n = 
+\begin{cases} 
+\sum_{i=1}^{N} \alpha_i b^{N-i} & \text{se } \alpha_0 = + \\
+\sum_{i=1}^{N} \alpha_i b^{N-i} - b^N & \text{se } \alpha_0 = - \quad \text{(es. complemento a 2)}
+\end{cases}
+\]
+
+Ad esempio, con $b=2$ e $N=15$ (16 bit totali, cioè 2 byte), è possibile rappresentare tutti gli interi nell'intervallo $[-32768, 32767]$. Se un intero rimane in questo intervallo, non ci sono errori di rappresentazione.
+
+\end{document}
