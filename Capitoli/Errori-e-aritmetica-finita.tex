@@ -1,0 +1,413 @@
+\section{Errori ed aritmetica finita}
+
+Il risultato fornito da un metodo numerico è quasi sempre affetto da errore. L'errore commesso è determinato da più cause, spesso intercalate tra loro.
+
+\subsection{Misure dell'Errore}
+Supponiamo che $x \in \mathbb{R}$ sia il dato esatto e $\tilde{x}$ la sua approssimazione.
+
+\begin{definition}[Errore Assoluto]
+L'errore assoluto è definito come la differenza:
+$$ \Delta x = \tilde{x} - x $$
+da cui segue $\tilde{x} = x + \Delta x$.
+\end{definition}
+
+Questa misura da sola non è completamente esaustiva. Ad esempio, un errore $|\Delta x| = 10^{-6}$ potrebbe essere considerato "grande" o "piccolo" solo rapportandolo al valore esatto $x$.
+
+\begin{definition}[Errore Relativo]
+Per ovviare a questo problema, se $x \neq 0$, si introduce l'errore relativo:
+$$ \epsilon_x = \frac{\Delta x}{x} = \frac{\tilde{x} - x}{x} $$
+\end{definition}
+
+Dalla definizione segue che:
+$$ \tilde{x} = x(1 + \epsilon_x) \quad \text{ovvero} \quad \frac{\tilde{x}}{x} = 1 + \epsilon_x $$
+Questo mostra che l'errore relativo $\epsilon_x$ deve essere confrontato con 1. Un errore relativo $|\epsilon_x|=10^{-6}$ fornisce un'informazione più "assoluta" sulla qualità dell'approssimazione.
+
+\subsection{Tipologie Principali di Errore}
+È possibile individuare, almeno a livello concettuale, tre tipologie principali di errore:
+\begin{enumerate}
+    \item Errori di troncamento;
+    \item Errori di iterazione;
+    \item Errori di round-off (o arrotondamento).
+\end{enumerate}
+
+\subsubsection{Errori di Discretizzazione (o Troncamento)}
+Questi errori nascono quando un problema matematico formulato nel continuo viene sostituito da un problema discreto che lo approssima.
+
+Ad esempio, per calcolare la derivata di una funzione $f(x)$ in un punto $x_0$, si parte dalla definizione:
+$$ f'(x_0) = \lim_{h \to 0} \frac{f(x_0+h) - f(x_0)}{h} $$
+Per il calcolo numerico, si utilizza un valore di $\bar{h}>0$ (fissato) "piccolo" ma finito, approssimando la derivata con il rapporto incrementale:
+$$ f'(x_0) \approx \frac{f(x_0+\bar{h}) - f(x_0)}{\bar{h}} $$
+L'errore di troncamento commesso è la differenza tra le due quantità: $f'(x) - \frac{f(x+\bar{h})-f(x)}{\bar{h}}$.
+Considerando lo sviluppo in serie di Taylor di $f(x+\bar{h})$ centrato in $x$:
+$$ f(x+\bar{h}) = f(x) + \bar{h} f'(x) + \frac{\bar{h}^2}{2} f''(x) + \dots $$
+si può isolare il rapporto incrementale e stimare l'errore:
+$$ \frac{f(x+\bar{h}) - f(x)}{\bar{h}} = f'(x) + O(\bar{h}) $$
+L'errore di troncamento è quindi del primo ordine rispetto ad $h$, ovvero $O(h)$.
+
+
+
+\subsubsection{Errori di Convergenza (o Iterazione)}
+Molti metodi numerici sono di tipo iterativo: non forniscono la soluzione esatta $x^*$, ma generano una successione di approssimazioni $\{x_n\}$. A partire da un'approssimazione iniziale $x_0$, le approssimazioni successive sono definite da una funzione di iterazione $\Phi(x)$:
+$$ x_{n+1} = \Phi(x_n), \quad n=0, 1, 2, \dots $$
+
+\begin{definition}[Metodo Convergente]
+Un metodo iterativo si dice convergente se la successione delle approssimazioni tende alla soluzione esatta:
+$$ \lim_{n \to \infty} x_n = x^* $$
+\end{definition}
+
+Poiché è possibile eseguire solo un numero finito di iterazioni, il processo viene arrestato a un indice $N$, e si utilizza $x_N$ come approssimazione di $x^*$. L'errore $x^* - x_N$ è detto errore di iterazione. L'indice $N$ è tipicamente determinato dinamicamente tramite un criterio di arresto.
+
+\begin{osservazione}
+    \begin{enumerate}
+        \item L'errore di iterazione è legato all'utilizzo del metodo di base ($\Phi(x)$).
+        \item Praticamente sempre, l'indice $N$ a cui si interrompe l'iterazione è determinato dinamicamente mediante un opportuno criterio di arresto.
+    \end{enumerate}
+\end{osservazione}
+
+\subsubsection{Errori di Round-off}
+Questi errori sono dovuti all'utilizzo dell'aritmetica finita di un calcolatore. In particolare, gli errori di rappresentazione nascono dal fatto che non tutti i numeri possono essere rappresentati esattamente nella memoria di un computer.
+Analizzeremo la rappresentazione di numeri interi e reali.
+
+\paragraph{Numeri Interi}
+Fissata una base di rappresentazione $b$ e un numero di cifre $N$, un numero intero viene memorizzato tramite una stringa del tipo:
+$$ \alpha_0 \alpha_1 \dots \alpha_N $$
+dove $\alpha_0 \in \{+,-\}$ è il segno e $\alpha_i \in \{0, 1, \dots, b-1\}$ sono le cifre. A questa stringa corrisponde il valore:
+\[ n = 
+\begin{cases} 
+\sum_{i=1}^{N} \alpha_i b^{N-i} & \text{se } \alpha_0 = + \\
+\sum_{i=1}^{N} \alpha_i b^{N-i} - b^N & \text{se } \alpha_0 = - \quad \text{(es. complemento a 2)}
+\end{cases}
+\]
+
+Ad esempio, con $b=2$ e $N=15$ (16 bit totali, cioè 2 byte), è possibile rappresentare tutti gli interi nell'intervallo $[-32768, 32767]$. Se un intero rimane in questo intervallo, non ci sono errori di rappresentazione.
+
+\subsubsection{Numeri reali}
+Un numero "reale" è rappresentato in memoria da una stringa del tipo:
+$$ \alpha_0 \alpha_1 \dots \alpha_m \beta_1 \dots \beta_s $$
+Fissata una base di rappresentazione $b \in \mathbb{N}$ (pari), le cifre sono così definite:
+\begin{itemize}
+    \item $\alpha_0 \in \{+,-\}$
+    \item $\alpha_i, \beta_j \in \{0, 1, \dots, b-1\}$, per $i=1,\dots,m$ e $j=1,\dots,s$, con $\alpha_1 \neq 0$.
+\end{itemize}
+Questa stringa rappresenta il numero in notazione scientifica normalizzata:
+$$ \tilde{x} = \pm S \cdot b^{e-\nu} $$
+dove $S$ è la \textbf{mantissa}:
+$$ S = \sum_{i=1}^{m} \alpha_i b^{1-i} = (\alpha_1 . \alpha_2 \dots \alpha_m)_b $$
+e $e$ è l'\textbf{esponente}, dato da:
+$$ e = \sum_{j=1}^{s} \beta_j b^{s-j} $$
+A questo si sottrae lo "shift" $\nu$, una costante intera fissata. Lo shift è scelto in modo da poter rappresentare circa lo stesso numero di esponenti positivi e negativi. Poiché $0 \le e \le b^s - 1$, si sceglie tipicamente $\nu \approx \frac{b^s}{2}$.
+
+Per la mantissa, abbiamo che:
+$$ 1 \le S < b $$
+
+\begin{definition}[Numeri di Macchina]
+L'insieme dei numeri della forma descritta, assieme allo zero, costituisce l'insieme dei \textbf{numeri di macchina} normalizzati, indicato con $\mathcal{M}$.
+\end{definition}
+
+\begin{osservazione}
+\begin{enumerate}
+    \item L'insieme $\mathcal{M}$ è un insieme finito.
+    \item Il più piccolo numero di macchina positivo è $r_1 = 1 \cdot b^{0-\nu} = b^{-\nu}$.
+    \item Il più grande numero di macchina positivo è $r_2 = (b - b^{1-m}) \cdot b^{(b^s-1)-\nu} \approx b^{b^s-\nu}$.
+\end{enumerate}
+\end{osservazione}
+
+Tutti i numeri di macchina sono contenuti nell'intervallo:
+$$ \mathcal{I} = [-r_2, -r_1] \cup \{0\} \cup [r_1, r_2] $$
+Poiché $\mathcal{M}$ è un insieme discreto mentre $\mathcal{I}$ è denso, è necessario definire una funzione di "arrotondamento", detta \textbf{floating}, che associa a ogni numero reale $x \in \mathcal{I}$ un numero di macchina $\tilde{x} \in \mathcal{M}$.
+$$ fl: x \in \mathcal{I} \to \tilde{x} = fl(x) \in \mathcal{M} $$
+La quantità $fl(x)-x$ è l'errore di rappresentazione. Per costruzione, valgono le seguenti proprietà:
+\begin{itemize}
+    \item $fl(0) = 0$
+    \item Se $x \in \mathcal{M}$, allora $fl(x) = x$
+    \item Per $x>0$, $fl(-x) = -fl(x)$
+\end{itemize}
+
+Dato un generico $x \in \mathcal{I}$, $x > 0$, scritto come:
+$$ x = (\alpha_1 . \alpha_2 \dots \alpha_m \alpha_{m+1} \dots)_b \cdot b^{e-\nu} $$
+esistono due modi principali per implementare $fl(x)$:
+\begin{enumerate}
+    \item \textbf{Troncamento}: si tagliano le cifre della mantissa dopo la $m$-esima.
+    $$ fl(x) = (\alpha_1 . \alpha_2 \dots \alpha_m)_b \cdot b^{e-\nu} $$
+    
+    \item \textbf{Arrotondamento}: si considera la prima cifra scartata, $\alpha_{m+1}$.
+    $$ fl(x) = (\alpha_1 . \alpha_2 \dots \alpha_{m-1} \tilde{\alpha}_m)_b \cdot b^{e-\nu} $$
+    con
+    \[ \tilde{\alpha}_m = 
+    \begin{cases} 
+    \alpha_m & \text{se } \alpha_{m+1} < b/2 \\
+    \alpha_m + 1 & \text{se } \alpha_{m+1} \ge b/2
+    \end{cases}
+    \]
+\end{enumerate}
+
+\begin{teorema}
+Per i numeri $x \in \mathcal{I}$, l'errore relativo di rappresentazione è maggiorato da una costante $u$, detta \textbf{precisione di macchina}.
+$$ \epsilon_x = \frac{|fl(x)-x|}{|x|} \le u = 
+\begin{cases} 
+b^{1-m} & \text{in caso di troncamento} \\
+\frac{1}{2}b^{1-m} & \text{in caso di arrotondamento}
+\end{cases}
+$$
+\end{teorema}
+\begin{proof}[Dimostrazione (solo per il troncamento)]
+$$ \epsilon_x = \frac{|x-fl(x)|}{|x|} = \frac{|(0.0 \dots 0 \alpha_{m+1} \dots)_b \cdot b^{e-\nu}|}{|(\alpha_1 . \alpha_2 \dots)_b \cdot b^{e-\nu}|} = \frac{|(\alpha_{m+1}.\alpha_{m+2}\dots)_b \cdot b^{-m}|}{|(\alpha_1.\alpha_2\dots)_b|} \le \frac{b \cdot b^{-m}}{1} = b^{1-m} $$
+\end{proof}
+
+\begin{osservazione}
+    Pertanto, concludiamo che la precisione di macchina di un'aritmetica finita è una maggiorazione uniforme dell'errore relativo di rappresentazione.
+    \end{osservazione}
+
+\subsubsection{Overflow e Underflow}
+Cosa succede se $x \notin \mathcal{I}$?
+\begin{itemize}
+    \item Se $x > r_2$, si ha una condizione di \textbf{overflow}. La recovery standard è porre $fl(x) = \pm\infty$.
+    \item Se $0 < x < r_1$, si ha una condizione di \textbf{underflow}. Esistono due tipi di recovery:
+    \begin{enumerate}
+        \item \textbf{Store to zero}: si pone $fl(x) = 0$.
+        \item \textbf{Gradual underflow}: si permette alla prima cifra della mantissa, $\alpha_1$, di essere zero (numero denormalizzato). Questo estende l'intervallo di rappresentabilità vicino allo zero, ma a discapito della precisione (il Teorema precedente non è più valido).
+    \end{enumerate}
+\end{itemize}
+
+In conclusione, per la funzione $fl(x)$ vale che:
+\[
+fl(x) = 
+\begin{cases} 
+x, & \text{se } x \in \mathcal{M} \\
+-fl(-x), & \text{se } x < 0 \\
+\text{underflow}, & \text{se } 0 < |x| < r_1 \\
+\text{overflow}, & \text{se } |x| > r_2
+\end{cases}
+\]
+
+\subsubsection{Lo standard IEEE 754}
+Lo standard IEEE 754 definisce un formato comune per l'aritmetica in virgola mobile, garantendo che i calcoli producano gli stessi risultati su piattaforme diverse.
+Le sue caratteristiche principali sono:
+\begin{itemize}
+    \item \textbf{Base binaria} ($b=2$).
+    \item \textbf{Arrotondamento "round to even"}: in caso di ambiguità (quando la prima cifra scartata è esattamente a metà), si sceglie il numero di macchina la cui ultima cifra della mantissa sia pari (cioè 0). Nonostante questa particolarità, la maggiorazione dell'errore relativo $u = \frac{1}{2}b^{1-m}$ continua a valere.
+    \item \textbf{Gradual underflow}: viene implementata la gestione dei numeri denormalizzati.
+\end{itemize}
+Dato che la base è binaria, la parte intera della mantissa di un numero è sempre nota:
+\begin{itemize}
+    \item È **1** per i numeri \textbf{normalizzati} (forma $1.f$).
+    \item È **0** per i numeri \textbf{denormalizzati} (forma $0.f$).
+\end{itemize}
+Questo permette di non memorizzare la parte intera, ma solo la parte frazionaria $f$, risparmiando 1 bit.
+
+Lo standard prevede due formati principali:
+
+\paragraph{Singola Precisione (32 bit - 4 byte)}
+I 32 bit sono così ripartiti:
+\begin{itemize}
+    \item \textbf{1 bit} per il segno della mantissa ($\alpha_0$).
+    \item \textbf{8 bit} per l'esponente ($s=8$), quindi $0 \le e \le 255$.
+    \item \textbf{23 bit} per la parte frazionaria $f$ (la mantissa ha $m=24$ bit).
+\end{itemize}
+La precisione di macchina in singola precisione è $u = \frac{1}{2} \cdot 2^{1-24} = 2^{-24} \approx 5.96 \times 10^{-8}$.
+
+L'esponente $e$ assume significati speciali:
+\begin{itemize}
+    \item Se $0 < e < 255$: numero \textbf{normalizzato}, con shift $\nu = 127$.
+    \item Se $e=0$ e $f=0$: rappresenta lo \textbf{zero}.
+    \item Se $e=0$ e $f \neq 0$: numero \textbf{denormalizzato}, con shift $\nu = 126$.
+    \item Se $e=255$ e $f=0$: rappresenta $\pm\infty$ (a seconda del segno).
+    \item Se $e=255$ e $f \neq 0$: rappresenta un \textbf{NaN} (Not a Number), generato da forme indeterminate come $\infty-\infty$, $0 \cdot \infty$, $\frac{0}{0}$.
+\end{itemize}
+
+\begin{osservazione}[Variazione dello shift e contiguità]
+    La variazione dello shift tra numeri normalizzati e denormalizzati si spiega osservando la transizione tra i due insiemi, che lo standard rende il più graduale possibile.
+    \begin{itemize}
+        \item Il più piccolo numero \textbf{normalizzato} positivo si ha con la mantissa minima ($1.0...0$) e l'esponente minimo per i normalizzati ($e=1$), risultando in:
+        $$(1.0\dots0)_2 \times 2^{1-127} = 2^{-126}$$
+    
+        \item Il più grande numero \textbf{denormalizzato} positivo si ha con la mantissa massima ($0.1...1$) e l'esponente fisso per i denormalizzati, che è uguale a quello dei più piccoli normalizzati:
+        $$(0.1\dots1)_2 \times 2^{-126} = (1 - 2^{-23}) \times 2^{-126}$$
+    \end{itemize}
+    Pertanto, i due numeri sono "contigui": il più grande denormalizzato è immediatamente precedente al più piccolo normalizzato, garantendo una transizione fluida verso lo zero (da cui il nome \emph{gradual underflow}).
+    \end{osservazione}
+
+\paragraph{Doppia Precisione (64 bit - 8 byte)}
+I 64 bit sono così ripartiti:
+\begin{itemize}
+    \item \textbf{1 bit} per il segno.
+    \item \textbf{11 bit} per l'esponente ($s=11$), quindi $0 \le e \le 2047$.
+    \item \textbf{52 bit} per la parte frazionaria $f$ ($m=53$ bit).
+\end{itemize}
+La precisione di macchina è $u = \frac{1}{2} \cdot 2^{1-53} = 2^{-53} \approx 1.11 \times 10^{-16}$, il che significa lavorare con circa 16 cifre decimali significative.
+
+Le regole per l'esponente sono analoghe alla singola precisione:
+\begin{itemize}
+    \item Se $0 < e < 2047$: numero \textbf{normalizzato}, con shift $\nu = 1023$.
+    \item Se $e=0$ e $f=0$: rappresenta lo \textbf{zero}.
+    \item Se $e=0$ e $f \neq 0$: numero \textbf{denormalizzato}, con shift $\nu = 1022$.
+    \item Se $e=2047$ e $f=0$: rappresenta $\pm\infty$.
+    \item Se $e=2047$ e $f \neq 0$: rappresenta un \textbf{NaN}.
+\end{itemize}
+
+\subsubsection{Aritmetica Finita}
+Le operazioni algebriche elementari $(+, -, *, /)$ in aritmetica finita sono definite come segue, per due numeri reali $x, y \in \mathbb{R}$:
+$$ x \oplus y = fl(fl(x) + fl(y)) $$
+Questo implica che le comuni proprietà algebriche (associativa, distributiva) in genere non valgono più.
+
+\begin{osservazione}[Esempi in Matlab]
+I seguenti comandi Matlab mostrano la perdita della proprietà associativa:
+\begin{lstlisting}
+    >> r2 = realmax; % Il più grande numero in doppia precisione
+    >> [(r2 - r2) + 1, r2 - (r2 + 1)]
+    ans =
+         1     0
+    \end{lstlisting}
+E la gestione di operazioni con Infinito:
+\begin{lstlisting}
+>> [(r2 - r2) * 2, r2 * 2 - r2 * 2]
+ans =
+     0   NaN
+\end{lstlisting}
+\end{osservazione}
+
+
+\subsubsection{Conversione tra tipi diversi}
+La conversione tra tipi di dati numerici, come tra diverse precisioni di numeri reali o tra reali e interi, è un'operazione delicata che può introdurre errori significativi.
+
+\paragraph{Conversione tra Reali (doppia $\leftrightarrow$ singola precisione)}
+Consideriamo una variabile `x` in doppia precisione e una `y` in singola precisione.
+\begin{itemize}
+    \item \textbf{Da doppia a singola}: Se si assegna un valore in doppia precisione (es. $\pi$) a una variabile in singola, il valore verrà memorizzato con l'accuratezza massima consentita dalla singola precisione, perdendo le cifre eccedenti.
+    \begin{verbatim}
+    x = pi; % Doppia precisione
+    y = single(x); % y contiene pi con accuratezza ridotta
+    \end{verbatim}
+    
+    \item \textbf{Da singola a doppia}: Se si esegue l'operazione inversa, la precisione persa non viene recuperata. La nuova variabile a doppia precisione manterrà l'accuratezza limitata del dato di partenza.
+    \begin{verbatim}
+    y = single(pi);
+    x = double(y); % x ha la stessa (bassa) accuratezza di y
+    \end{verbatim}
+\end{itemize}
+
+\paragraph{Conversione Reale $\leftrightarrow$ Intero}
+\begin{itemize}
+    \item \textbf{Da Intero a Reale}: Questa conversione è in genere innocua. Poiché l'insieme dei numeri reali rappresentabili è molto più ampio e denso, un intero può quasi sempre essere convertito in un reale. Si può avere una perdita di precisione solo se l'intero ha più cifre significative di quante la mantissa del tipo reale possa contenere.
+    
+    \item \textbf{Da Reale a Intero}: Questa è un'operazione \textbf{molto pericolosa}. L'intervallo di rappresentabilità degli interi (es. $[-32768, 32767]$ per interi a 2 byte) è estremamente più ristretto di quello dei numeri reali. Se il numero reale da convertire è al di fuori di questo intervallo, si verifica un errore di overflow.
+\end{itemize}
+
+\subsection{Condizionamento di un problema}
+Supponiamo di voler calcolare la soluzione di un problema che, per semplicità, formalizziamo come:
+\begin{equation}
+    y = f(x)
+\end{equation}
+dove $f: \mathbb{R} \to \mathbb{R}$ è una funzione sufficientemente regolare, $x$ è il dato di ingresso e $y$ è il risultato atteso.
+
+In un contesto reale, invece di lavorare con i dati e la funzione esatti, spesso si ha a che fare con un dato perturbato $\tilde{x}$ e, a causa dell'aritmetica finita del calcolatore, si utilizza una funzione perturbata $\tilde{f}$. Questo porta a un risultato anch'esso perturbato:
+\begin{equation}
+    \tilde{y} = \tilde{f}(\tilde{x})
+\end{equation}
+
+\begin{osservazione}
+Analizzare la differenza completa tra il risultato esatto e quello calcolato (cioè tra l'equazione (1) e la (2)) è in genere molto complesso. Ci limiteremo a un'analisi più semplice, studiando come le perturbazioni sui soli dati di ingresso influenzino il risultato, assumendo di utilizzare un'aritmetica esatta:
+\begin{equation}
+    \tilde{y} = f(\tilde{x})
+\end{equation}
+Lo studio della differenza tra il risultato dell'equazione (3) e quello dell'equazione (1) costituisce l'analisi del \textbf{condizionamento del problema}.
+\end{osservazione}
+
+Per $y \neq 0$, l'analisi è più efficace se condotta in termini di errori relativi. Poniamo:
+\[
+\begin{cases}
+    \tilde{x} = x(1 + \epsilon_x) \\
+    \tilde{y} = y(1 + \epsilon_y)
+\end{cases}
+\]
+dove $\epsilon_x$ e $\epsilon_y$ sono gli errori relativi sul dato di ingresso e sul risultato, rispettivamente. Vogliamo stabilire come $\epsilon_x$ si propaga su $\epsilon_y$, supponendo $|\epsilon_x| \ll 1$.
+
+Sostituendo le definizioni nella (3) e usando lo sviluppo di Taylor, otteniamo:
+$$ y(1 + \epsilon_y) = f(x(1+\epsilon_x)) \approx f(x) + f'(x) \cdot (x \epsilon_x) $$
+Dato che $y = f(x)$, si ha:
+$$ y + y \epsilon_y \approx y + f'(x) x \epsilon_x \implies y \epsilon_y \approx f'(x) x \epsilon_x $$
+Da cui si ricava la relazione tra gli errori relativi:
+$$ \epsilon_y \approx \frac{f'(x)x}{y} \epsilon_x $$
+Questo ci porta a definire il numero di condizione.
+
+\begin{definition}[Numero di Condizione]
+Il fattore di amplificazione dell'errore
+$$ K = \left| \frac{f'(x)x}{y} \right| $$
+è detto \textbf{numero di condizione} del problema. Vale la relazione:
+$$ |\epsilon_y| \approx K \cdot |\epsilon_x| $$
+\end{definition}
+
+Un problema si dice:
+\begin{itemize}
+    \item \textbf{ben condizionato}, se $K \approx 1$;
+    \item \textbf{mal condizionato}, se $K \gg 1$ (molto maggiore).
+\end{itemize}
+
+\begin{osservazione}
+Se si lavora in un'aritmetica finita con precisione di macchina $u$, l'errore relativo sul dato di ingresso sarà almeno $|\epsilon_x| \approx u$. Se il problema ha un numero di condizione $K \approx u^{-1}$, l'errore relativo sul risultato sarà $|\epsilon_y| \approx 1$. Questo significa una perdita totale di cifre significative, rendendo il risultato inattendibile.
+\end{osservazione}
+
+\subsubsection*{Condizionamento delle Operazioni Algebriche Elementari}
+
+\paragraph{Moltiplicazione}
+Per il problema $y = x_1 x_2$, perturbando gli input si ha:
+$$ y(1+\epsilon_y) = x_1(1+\epsilon_1) x_2(1+\epsilon_2) = x_1 x_2 (1 + \epsilon_1 + \epsilon_2 + \epsilon_1 \epsilon_2) $$
+Trascurando i termini di ordine superiore, $y(1+\epsilon_y) \approx y(1+\epsilon_1+\epsilon_2)$, da cui:
+$$ |\epsilon_y| \approx |\epsilon_1 + \epsilon_2| \le |\epsilon_1| + |\epsilon_2| \le 2 \max\{|\epsilon_1|, |\epsilon_2|\} $$
+La moltiplicazione è un'operazione \textbf{ben condizionata}, con $K=2$.
+
+\paragraph{Divisione}
+Per il problema $y = x_1 / x_2$, si ha:
+$$ y(1+\epsilon_y) = \frac{x_1(1+\epsilon_1)}{x_2(1+\epsilon_2)} = \frac{x_1}{x_2}(1+\epsilon_1)(1+\epsilon_2)^{-1} $$
+Usando lo sviluppo $(1+\epsilon)^{-1} \approx 1 - \epsilon$, otteniamo:
+$$ y(1+\epsilon_y) \approx y(1+\epsilon_1)(1-\epsilon_2) \approx y(1+\epsilon_1 - \epsilon_2) $$
+$$ |\epsilon_y| \approx |\epsilon_1 - \epsilon_2| \le 2 \max\{|\epsilon_1|, |\epsilon_2|\} $$
+Anche la divisione è un'operazione \textbf{ben condizionata}, con $K=2$.
+
+\paragraph{Somma Algebrica}
+Per il problema $y = x_1 + x_2$, la perturbazione porta a:
+$$ y(1+\epsilon_y) = x_1(1+\epsilon_1) + x_2(1+\epsilon_2) = x_1+x_2 + x_1\epsilon_1 + x_2\epsilon_2 $$
+$$ y\epsilon_y = x_1\epsilon_1 + x_2\epsilon_2 \implies \epsilon_y = \frac{x_1}{x_1+x_2}\epsilon_1 + \frac{x_2}{x_1+x_2}\epsilon_2 $$
+Il numero di condizione è:
+$$ K = \frac{|x_1| + |x_2|}{|x_1+x_2|} $$
+Si distinguono due casi:
+\begin{itemize}
+    \item \textbf{Addendi concordi ($x_1 x_2 > 0$)}: In questo caso $|x_1+x_2| = |x_1|+|x_2|$, quindi $K=1$. La somma di numeri concordi è \textbf{ben condizionata}.
+    \item \textbf{Addendi discordi ($x_1 x_2 < 0$)}: Se $x_1 \approx -x_2$, il denominatore $|x_1+x_2|$ diventa molto piccolo, e $K$ può diventare arbitrariamente grande. La somma di numeri quasi opposti è un'operazione \textbf{mal condizionata}. Questo porta al fenomeno della \textbf{cancellazione numerica}, in cui il risultato può essere molto inaccurato anche se gli addendi sono noti con grande precisione.
+\end{itemize}
+
+\subsubsection*{Esempio di Cancellazione Numerica}
+
+Si vuole approssimare la derivata di $f(x) = x^{10}$ in $x=1$ (valore esatto $f'(1)=10$) usando la formula:
+$$ \frac{(1+\text{eps})^{10} - 1}{\text{eps}} $$
+Al diminuire di \texttt{eps}, l'errore di troncamento si riduce, ma l'errore di round-off dovuto alla cancellazione numerica (sottrazione tra due numeri quasi uguali: $(1+\text{eps})^{10}$ e $1$) aumenta, fino a dominare e distruggere il risultato.
+
+\begin{table}[h!]
+\centering
+\caption{Approssimazione della derivata di $f(x)=x^{10}$ in $x=1$}
+\begin{tabular}{ll}
+\toprule
+\textbf{eps} & \textbf{Valore Calcolato: $((1+\text{eps})^{10}-1)/\text{eps}$} \\
+\midrule
+1.00e-01 & 15.937424601000023 \\
+1.00e-02 & 10.462212541120453 \\
+1.00e-03 & 10.045120210251168 \\
+1.00e-04 & 10.004501200209237 \\
+1.00e-05 & 10.000450012070949 \\
+1.00e-06 & 10.000044999403102 \\
+1.00e-07 & 10.000004506682814 \\
+\midrule
+\multicolumn{2}{c}{\textit{--- Inizia la cancellazione numerica ---}} \\
+\midrule
+1.00e-08 & 10.000000383314500 \\
+1.00e-09 & 10.000000827403710 \\
+1.00e-10 & 10.000000827403710 \\
+1.00e-11 & 10.000000827403708 \\
+1.00e-12 & 10.000889005823410 \\
+1.00e-13 & 9.992007221626409 \\
+1.00e-14 & 9.992007221626409 \\
+1.00e-15 & 11.102230246251565 \\
+1.00e-16 & 0.000000000000000 \\
+\bottomrule
+\end{tabular}
+\end{table}
