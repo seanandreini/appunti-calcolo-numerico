@@ -1,0 +1,197 @@
+\section{Matlab (Matrix Laboratory)}
+Matlab è un linguaggio interpretato orientato alla gestione efficiente delle matrici. Tutte le variabili sono definite in un'area di lavoro (workspace) e non è necessario dichiararne il tipo o la dimensione in anticipo.
+
+\subsection{Gestione delle Variabili e della Workspace}
+Il dimensionamento delle variabili è automatico e si adatta alle operazioni. Ad esempio, eseguendo `A(6,7) = 3.14`, Matlab crea una matrice `A` di dimensioni $6 \times 7$. Gli elementi non specificati vengono inizializzati a zero. La rappresentazione interna dei numeri è conforme allo standard IEEE 754 in doppia precisione.
+
+Per ispezionare la workspace si usano i comandi:
+\begin{itemize}
+    \item \texttt{who}: mostra i nomi delle variabili presenti.
+    \item \texttt{whos}: mostra una tabella dettagliata con nome, dimensione, tipo e memoria occupata.
+\end{itemize}
+
+È buona norma, per ragioni di efficienza, pre-allocare lo spazio per le matrici se le loro dimensioni finali sono note. Ad esempio:
+\begin{lstlisting}
+% Inizializza una matrice 200x300 con tutti zeri
+A = zeros(200, 300);
+\end{lstlisting}
+Per sopprimere la visualizzazione del risultato di un'operazione, si termina la riga con un punto e virgola (\texttt{;}).
+
+Per salvare o caricare la workspace si usano i comandi:
+\begin{itemize}
+    \item \texttt{save <nomefile>}: salva tutte le variabili nel file \texttt{nomefile.mat}.
+    \item \texttt{load <nomefile>}: carica le variabili dal file specificato.
+\end{itemize}
+
+\paragraph{Formato di Visualizzazione}
+Il comando \texttt{format} controlla come i valori numerici vengono visualizzati nella finestra di comando. È importante sottolineare che questo comando modifica solo la visualizzazione e non la precisione con cui i numeri sono memorizzati (che rimane in doppia precisione).
+
+Alcune delle opzioni più comuni sono:
+\begin{itemize}
+    \item \texttt{format short}: formato a punto fisso con 5 cifre (default).
+    \item \texttt{format long}: formato a punto fisso con 15 cifre.
+    \item \texttt{format short e}: notazione scientifica con 5 cifre.
+    \item \texttt{format long e}: notazione scientifica con 15 cifre.
+\end{itemize}
+
+\subsection{Creazione e Manipolazione di Matrici}
+Uno dei comandi più utili in Matlab è \lstinline|help|. Questo comando permette di visualizzare la documentazione di una qualsiasi funzione direttamente nella finestra di comando. Ad esempio, per ottenere informazioni sulla funzione \lstinline|zeros|, si digita \lstinline|help zeros|.
+\paragraph{Funzioni di base}
+\begin{itemize}
+    \item \texttt{zeros(m, n)}: crea una matrice $m \times n$ di zeri.
+    \item \texttt{eye(n)}: crea una matrice identità $n \times n$.
+    \item \texttt{rand(m, n)}: crea una matrice $m \times n$ con elementi casuali da una distribuzione uniformeme.
+\end{itemize}
+
+\paragraph{Operatore Colon (:)}
+L'operatore \texttt{:} è estremamente versatile per creare vettori e selezionare sottomatrici.
+\begin{lstlisting}
+v1 = 1:5;       % Crea il vettore [1 2 3 4 5]
+v2 = 5:-1:1;    % Crea il vettore [5 4 3 2 1]
+v3 = 2:2:20;    % Crea il vettore dei numeri pari da 2 a 20
+\end{lstlisting}
+
+\paragraph{Indicizzazione e Concatenazione}
+Si possono estrarre righe, colonne o sottomatrici e concatenare matrici esistenti.
+\begin{lstlisting}
+A = rand(3);
+B = rand(3,1);
+C = rand(2,4);
+
+% Concatenazione orizzontale e verticale
+D = [A B]; % Concatena A e B orizzontalmente (devono avere stesso numero di righe)
+E = [A; rand(1,3)]; % Concatena A e una nuova riga verticalmente
+
+% Estrazione
+seconda_riga = D(2, :);
+terza_colonna = D(:, 3);
+sottomatrice = D(1:2, 1:3); % Estrae le prime due righe e le prime tre colonne
+\end{lstlisting}
+
+\subsection{Operatori ed Espressioni}
+\begin{itemize}
+    \item \textbf{Operatori Aritmetici}: \verb|+|, \verb|-|, \verb|*|, \verb|/|, \verb|\|
+    \item \textbf{Operazioni con Scalari}: Le operazioni tra una matrice e uno scalare sono applicate a ogni elemento. Es: \texttt{C = A + 1;}, \texttt{C = 2 * A;}.
+    \item \textbf{Operatori Element-wise}: Se preceduti da un punto (\texttt{.}), gli operatori agiscono elemento per elemento. Richiedono che le matrici abbiano le stesse dimensioni.
+    \begin{itemize}
+        \item \texttt{C = A .* B} $\implies C(i,j) = A(i,j) * B(i,j)$
+        \item \texttt{C = A ./ B} $\implies C(i,j) = A(i,j) / B(i,j)$
+    \end{itemize}
+    \item \textbf{Divisione Matriciale}:
+    \begin{itemize}
+        \item \verb|C = A \ B| (backslash) risolve il sistema lineare $AX = B$, equivalente a $A^{-1}B$.
+        \item \texttt{C = A / B} (slash) è equivalente a $AB^{-1}$.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Funzioni Utili}
+Le funzioni in Matlab possono essere raggruppate in:
+\begin{itemize}
+    \item \textbf{Funzioni orientate a scalari}: operano su ogni elemento di una matrice. Es: \texttt{sin(A)}, \texttt{cos(A)}, \texttt{exp(A)}, \texttt{log(A)}, \texttt{sqrt(A)}. Anche le funzioni di arrotondamento come \texttt{round}, \texttt{floor}, \texttt{ceil}, \texttt{fix} rientrano in questa categoria.
+    \item \textbf{Funzioni orientate a vettori}: se applicate a una matrice, operano colonna per colonna restituendo un vettore riga. Es: \texttt{max(A)}, \texttt{min(A)}, \texttt{mean(A)}, \texttt{sum(A)}, \texttt{sort(A)}.
+    \item \textbf{Funzioni orientate a matrici}: operano sull'intera matrice. Es: \texttt{size(A)}, \texttt{det(A)}, \texttt{inv(A)}, \texttt{diag(A)}.
+\end{itemize}
+
+\subsection{Grafica 2D}
+Matlab offre potenti strumenti per la visualizzazione grafica.
+\begin{itemize}
+    \item \texttt{plot(x, y)}: disegna la spezzata che congiunge i punti definiti dai vettori \texttt{x} e \texttt{y}.
+    \item \texttt{semilogx}, \texttt{semilogy}, \texttt{loglog}: disegnano grafici con scale logaritmiche sugli assi.
+    \item \texttt{xlabel('testo')}, \texttt{ylabel('testo')}, \texttt{title('titolo')}: aggiungono etichette agli assi e un titolo al grafico.
+    \item \texttt{legend('curva1', 'curva2')}: aggiunge una legenda.
+    \item \texttt{axis([xmin xmax ymin ymax])}: imposta i limiti degli assi.
+    \item \texttt{figure}: apre una nuova finestra grafica.
+\end{itemize}
+
+\subsection{Controllo del Flusso e m-files}
+Matlab fornisce costrutti per il controllo del flusso di esecuzione (selezioni e iterazioni) e permette di salvare sequenze di comandi in file con estensione \texttt{.m}, detti \textbf{m-files}.
+
+\subsubsection{Selezioni}
+Il costrutto di selezione principale è \texttt{if-elseif-else}.
+\begin{lstlisting}[frame=none, numbers=none]
+if <espressione_booleana_1>
+    % blocco di istruzioni 1
+elseif <espressione_booleana_2>
+    % blocco di istruzioni 2
+else
+    % blocco di istruzioni 3
+end
+\end{lstlisting}
+Le espressioni booleane si ottengono combinando operatori relazionali (\verb|>|, \verb|<|, \verb|>=|, \verb|<=|, \verb|==|, \verb|~=|) e operatori booleani (\verb|&&| per AND, \verb#||# per OR, \verb|~| per NOT). È buona norma usare le parentesi \verb|()| per definire chiaramente l'ordine di valutazione.
+
+\subsubsection{Iterazioni (Cicli)}
+I cicli principali sono \texttt{for} e \texttt{while}.
+\paragraph{Il ciclo \texttt{for}} Esegue un blocco di istruzioni per ogni elemento di un vettore.
+\begin{lstlisting}
+% Esempio: calcola il quadrato dei numeri pari da 10 a 2
+a = zeros(10,1);
+for i = 10:-2:2
+    a(i) = i^2;
+end
+\end{lstlisting}
+Il comando \texttt{break} permette di uscire immediatamente dal ciclo che lo contiene.
+
+\paragraph{Il ciclo \texttt{while}} Esegue un blocco di istruzioni finché una condizione booleana rimane vera.
+\begin{lstlisting}[frame=none, numbers=none]
+while <condizione_booleana>
+    % blocco di istruzioni
+    % (eventuale `break` per uscita forzata)
+end
+\end{lstlisting}
+
+\subsubsection{m-files: Script e Function}
+Esistono due tipi di m-files.
+\begin{itemize}
+    \item \textbf{Script-file}: È una semplice sequenza di comandi. Quando eseguito, opera direttamente sulle variabili presenti nella workspace (le sue variabili sono \textbf{globali}).
+    \item \textbf{Function-file}: È un blocco di codice più strutturato che comunica con l'esterno solo tramite parametri di input e output. Tutte le variabili definite al suo interno sono \textbf{locali} e vengono distrutte al termine dell'esecuzione.
+\end{itemize}
+
+\paragraph{Anatomia di una Function}
+Una function è definita dalla seguente intestazione:
+\begin{lstlisting}[frame=none, numbers=none]
+function [out1, out2, ...] = nomeFunzione(in1, in2, ...)
+\end{lstlisting}
+All'interno di una function si possono usare:
+\begin{itemize}
+    \item \texttt{nargin}: restituisce il numero di argomenti di input forniti alla chiamata.
+    \item \texttt{nargout}: restituisce il numero di argomenti di output richiesti alla chiamata.
+    \item \texttt{\%}: introduce un commento (il resto della riga viene ignorato).
+    \item \texttt{...} (tre punti): permettono di spezzare una singola istruzione su più righe.
+    \item \texttt{return}: termina l'esecuzione della function.
+\end{itemize}
+
+\paragraph{Help in linea}
+Le prime righe di commento consecutive dopo l'intestazione di una function costituiscono il suo \textbf{help in linea}, che viene visualizzato quando si digita \texttt{help nomeFunzione}.
+
+\paragraph{Esempio di Function}
+Questo esempio definisce una function che calcola media e varianza di un vettore di dati, gestendo il numero di input e output.
+
+\begin{lstlisting}
+function [media, varianza] = esempio(dati)
+% [media, varianza] = esempio(dati)
+% Calcola la media e la varianza di un insieme di dati.
+%
+% Input:
+%   dati - vettore con i dati di ingresso;
+% Output:
+%   media    - media dei dati;
+%   varianza - varianza dei dati.
+
+% Controllo degli input
+if nargin < 1
+    error('Dati di ingresso insufficienti');
+else
+    if isempty(dati), error('Il vettore di dati è vuoto'), end
+end
+
+media = mean(dati);
+
+% Calcola la varianza solo se richiesta in output
+if nargout > 1
+    varianza = var(dati);
+end
+
+return
+\end{lstlisting}
+
+Digitando \texttt{help esempio} nella console di Matlab, si otterrà il testo scritto nelle prime righe di commento della funzione.
