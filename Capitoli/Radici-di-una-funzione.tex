@@ -741,3 +741,106 @@ Iter (i) & Newton & Newton Mod. (m=1) & Aitken \\
 \end{table}
 (Nota: La tabella fornita negli appunti sembra riferirsi a una radice multipla, non $f(x)=(x-1)e^x$. Ho corretto l'esempio per coerenza).
 \end{esempio}
+
+\subsection*{Implementazione Matlab del Metodo di Newton Modificato}
+
+\begin{lstlisting}
+    function [x, it, xx] = newton(fun, x0, tol, maxit, molt) 
+    % [x, it, xx] = newton(fun, x0, tol, maxit, molt)
+    %
+    % Metodo di Newton per gli zeri di una funzione.
+    %
+    % Input:
+    %   fun  - identificatore function che implementa
+    %          il problema da risolvere, del tipo
+    %          [fx, f1x] = fun(x),
+    %          con fx, f1x rispettivamente i valori della funzione
+    %          e della derivata prima, calcolati in x;
+    %   x0   - approssimazione iniziale; 
+    %   tol  - tolleranza per il criterio di arresto 
+    %          (default = 1E-8);
+    %   maxit- numero massimo di iterazioni 
+    %          (default = 1000);
+    %   molt - molteplicità della radice 
+    %          (default = 1)
+    %
+    % Output:
+    %   x    - approssimazione trovata;
+    %   it   - numero di iterazioni per ottenere la convergenza. Se it = -1, 
+    %          convergenza non raggiunta entro maxit;
+    %   xx   - (opzionale) vettore con le approssimazioni ottenute.
+    %
+    % Rel. 2025-10-28.
+   
+    if nargin < 2
+        error('numero argomenti insufficiente');
+    end
+
+    if nargin >= 3
+        if tol <= 0 
+            error('tolleranza non idonea');
+        end
+
+        if nargin >= 4
+            if maxit < 1 
+                error('numero massimo iterazioni errato');
+            end
+       
+            if nargin >= 5
+                if molt < 1 || molt ~= fix(molt) 
+                    error('molteplicità non corretta');
+                end
+            else 
+                molt = 1;
+            end 
+            
+        else
+            maxit = 1000;
+            molt = 1
+        end
+
+    else 
+        tol = 1e-8;
+        maxit = 1000;
+        molt = 1;
+    end
+    
+    if nargout == 3
+        flag = 1; 
+        xx = zeros(maxit+1, 1);
+        xx(1) = x0;
+    else
+        flag = 0; 
+    end
+
+    for i = 1:maxit
+        [fx, f1x] = feval(fun, x0); 
+        
+        if f1x == 0 && fx == 0
+            x = x0;
+            if flag, xx = xx(1:i), it=i; end  
+        else if f1x == 0
+            error('Metodo non applicabile');
+            it=-1;
+            if flag, xx = xx(1:i), end
+        
+        else
+            x = x0 - molt * fx / f1x;
+            if flag, xx(i+1)=x; end
+        end
+
+        err = abs(x - x0) / (1 + abs(x0)); 
+        if err <= tol
+            it = i; 
+            if flag, xx = xx(1:i); end 
+            break; 
+        end
+        
+        x0 = x; 
+    end
+ 
+    if err > tol, it = -1; end
+        
+    return
+  
+    \end{lstlisting}

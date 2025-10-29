@@ -1,0 +1,107 @@
+\section{Risoluzione di Sistemi Lineari}
+% Riguardare l'Appendice A1 del libro per richiami di algebra lineare.
+
+Il problema consiste nel risolvere un sistema di $m$ equazioni lineari in $n$ incognite:
+\[
+\begin{cases}
+    a_{11}x_1 + a_{12}x_2 + \dots + a_{1n}x_n &= b_1 \\
+    a_{21}x_1 + a_{22}x_2 + \dots + a_{2n}x_n &= b_2 \\
+    \vdots \\
+    a_{m1}x_1 + a_{m2}x_2 + \dots + a_{mn}x_n &= b_m
+\end{cases}
+\]
+dove i coefficienti $a_{ij}$ e i termini noti $b_i$ sono assegnati, mentre le incognite $x_j$ sono da determinare.
+
+Possiamo riscrivere il sistema in forma vettoriale (o matriciale):
+\begin{equation} \label{eq:sistema_lineare}
+    A\mathbf{x} = \mathbf{b}
+\end{equation}
+introducendo:
+\begin{itemize}
+    \item La \textbf{matrice dei coefficienti} $A \in \mathbb{R}^{m \times n}$:
+    \[ A = 
+    \begin{pmatrix}
+        a_{11} & a_{12} & \dots & a_{1n} \\
+        a_{21} & a_{22} & \dots & a_{2n} \\
+        \vdots & \vdots & \ddots & \vdots \\
+        a_{m1} & a_{m2} & \dots & a_{mn}
+    \end{pmatrix}
+    \]
+    \item Il \textbf{vettore dei termini noti} $\mathbf{b} \in \mathbb{R}^m$:
+    \[ \mathbf{b} = \begin{pmatrix} b_1 \\ b_2 \\ \vdots \\ b_m \end{pmatrix} \]
+    \item Il \textbf{vettore delle incognite} $\mathbf{x} \in \mathbb{R}^n$:
+    \[ \mathbf{x} = \begin{pmatrix} x_1 \\ x_2 \\ \vdots \\ x_n \end{pmatrix} \]
+\end{itemize}
+
+Nella nostra trattazione, assumeremo sempre che:
+\begin{enumerate}
+    \item $m \ge n$ (numero di equazioni maggiore o uguale al numero di incognite). Pertanto il numero di colonne della matrice A è $\leq$ del numero di righe:
+    \begin{itemize}
+        \item La riga $i$-esima di $A$ è il vettore riga: $(a_{i1}, a_{i2}, \dots, a_{in}) \in \mathbb{R}^{1 \times n}$.
+        \item La colonna $j$-esima di $A$ è il vettore colonna: $\begin{pmatrix} a_{1j} \\ a_{2j} \\ \vdots \\ a_{mj} \end{pmatrix} \in \mathbb{R}^m$.
+        \item $a_{ij}$ è l'elemento che si trova all'intersezione della riga $i$-esima con la colonna $j$-esima.
+    \end{itemize}
+    \item La matrice $A$ abbia \textbf{rango massimo}, ovvero $\text{rank}(A) = n$. Questo implica che le colonne di $A$ sono vettori linearmente indipendenti.
+\end{enumerate}
+
+Distingueremo due casi significativi:
+\begin{enumerate}
+    \item $m=n \iff$ A è una matrice quadrata;
+    \item $m>n \iff$ A è a rango massimo
+\end{enumerate}
+
+\subsection{Il Caso Quadrato ($m=n$)}
+Se $A \in \mathbb{R}^{n \times n}$ e $\text{rank}(A) = n$, allora $A$ è una matrice \textbf{nonsingolare} (o invertibile). Questo significa che:
+\begin{itemize}
+    \item Esiste ed è unica la matrice inversa $A^{-1}$ tale che $A^{-1}A = AA^{-1} = I$, dove $I$ è la matrice identità $n \times n$.
+    \item Il determinante di $A$ è diverso da zero: $\det(A) \neq 0$.
+\end{itemize}
+In questo caso, il sistema lineare $A\mathbf{x} = \mathbf{b}$ ammette un'unica soluzione. Moltiplicando entrambi i membri a sinistra per $A^{-1}$, otteniamo:
+$$ A^{-1}(A\mathbf{x}) = A^{-1}\mathbf{b} \implies (A^{-1}A)\mathbf{x} = A^{-1}\mathbf{b} \implies I\mathbf{x} = A^{-1}\mathbf{b} $$
+Quindi, la soluzione formale è:
+$$ \mathbf{x} = A^{-1}\mathbf{b} $$
+\begin{osservazione}
+Sebbene questa espressione fornisca la soluzione, calcolare esplicitamente l'inversa $A^{-1}$ per poi moltiplicarla per $\mathbf{b}$ non è generalmente efficiente dal punto di vista computazionale. Si preferiscono metodi diversi, che vedremo nel seguito. Useremo questa formula solo in casi molto particolari.
+\end{osservazione}
+
+\subsection{Sistemi Lineari: Casi Semplici}
+Cominciamo esaminando casi in cui la matrice $A$ ha una struttura particolare che rende la risoluzione del sistema $A\mathbf{x} = \mathbf{b}$ particolarmente semplice. Questi casi serviranno come base per metodi più generali. Le strutture che considereremo sono:
+\begin{itemize}
+    \item $A$ diagonale
+    \item $A$ triangolare
+    \item $A$ ortogonale
+\end{itemize}
+L'ordine di presentazione segue la complessità computazionale crescente, misurata in termini di occupazione di memoria e numero di operazioni algebriche (flops) richieste.
+
+\subsubsection{$A$ diagonale}
+In questo caso, $a_{ij} = 0$ per ogni $i \neq j$.
+\[ A = 
+\begin{pmatrix}
+    a_{11} & 0 & \dots & 0 \\
+    0 & a_{22} & \dots & 0 \\
+    \vdots & \vdots & \ddots & \vdots \\
+    0 & 0 & \dots & a_{nn}
+\end{pmatrix}
+\]
+\begin{osservazione}[Struttura Diagonale]
+La differenza $k = |j-i|$ indica la diagonale: $k=0$ è la diagonale principale, $k>0$ è la $k$-esima sopradiagonale, $k<0$ è la $(-k)$-esima sottodiagonale. Per una matrice diagonale, solo gli elementi con $k=0$ possono essere non nulli.
+\end{osservazione}
+Per memorizzare gli elementi significativi di $A$ è sufficiente un vettore di lunghezza $n$. Una matrice diagonale è un caso particolare di \textbf{matrice sparsa} (una matrice con un numero di elementi non nulli molto inferiore a $n^2$).
+
+Il sistema $A\mathbf{x} = \mathbf{b}$ diventa:
+\[
+\begin{cases}
+    a_{11}x_1 &= b_1 \\
+    a_{22}x_2 &= b_2 \\
+    \vdots \\
+    a_{nn}x_n &= b_n
+\end{cases}
+\]
+Poiché $A$ è nonsingolare, $\det(A) = \prod_{i=1}^n a_{ii} \neq 0$, il che implica $a_{ii} \neq 0$ per ogni $i=1, \dots, n$.
+Pertanto, la soluzione si ottiene immediatamente con $n$ divisioni:
+$$ x_i = \frac{b_i}{a_{ii}}, \quad i=1, \dots, n $$
+In conclusione, per risolvere un sistema diagonale $n \times n$ sono sufficienti:
+\begin{itemize}
+    \item Memoria per 2 vettori di lunghezza $n$ (uno per la diagonale di $A$, uno per $\mathbf{b}$ che viene sovrascritto con $\mathbf{x}$).
+    \item $n$ operazioni algebriche (flops).
+\end{itemize}
