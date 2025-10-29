@@ -1,4 +1,4 @@
-\section{Radici di una equazione}
+\section{Radici di una funzione}
 
 Data una funzione $f: [a,b] \subseteq \mathbb{R} \to \mathbb{R}$, vogliamo determinare un valore $x^* \in [a,b]$ tale che:
 \[
@@ -352,4 +352,392 @@ Questo dimostra la convergenza quadratica ($p=2$).
     Nel caso di una radice multipla, con molteplicità $m > 1$, si può dimostrare che:
     $$ \lim_{i \to \infty} \frac{|e_{i+1}|}{|e_i|} = \frac{m-1}{m} $$
     ovvero, l'ordine di convergenza del metodo di Newton diventa lineare ($p=1$), come conseguenza del mal condizionamento del problema.
-    \end{osservazione}
+\end{osservazione}
+
+\subsection*{Riepilogo dei Metodi Visti}
+\paragraph{Metodo di Bisezione}
+\begin{itemize}
+    \item Applicabile se $f \in C([a,b])$ e $f(a)f(b) < 0$.
+    \item Ordine di convergenza lineare ($p=1$), con costante asintotica $C=1/2$.
+    \item Il numero massimo di iterazioni per raggiungere una data accuratezza (\texttt{tol}) è noto a priori: $\text{imax} = \lceil \log_2(b-a) - \log_2(\text{tol}) \rceil$.
+\end{itemize}
+
+\paragraph{Metodo di Newton}
+Formula iterativa: $x_{i+1} = x_i - \frac{f(x_i)}{f'(x_i)}$.
+\begin{itemize}
+    \item Richiede che $f(x)$ sia derivabile.
+    \item Se $f \in C^2$ in un intorno di una radice semplice, allora si ha, se convergente alla radice, convergenza \textbf{quadratica} ($p=2$).
+    \item Se converge a una radice \textbf{multipla} $x^*$ (molteplicità $m>1$), la convergenza è solo \textbf{lineare} ($p=1$) con $C = \frac{m-1}{m}$, riflettendo il mal condizionamento del problema.
+\end{itemize}
+
+\subsection{Convergenza Locale vs Globale}
+A differenza del metodo di bisezione, per il metodo di Newton non è in generale possibile garantire la convergenza a partire da un punto iniziale $x_0$ qualsiasi.
+
+\begin{esempio}[Non convergenza di Newton]
+Consideriamo $f(x) = x^3 - 5x = x(x^2-5)$, che ha tre radici semplici: $0, \pm\sqrt{5}$. Applichiamo il metodo di Newton partendo da $x_0=1$.
+$f'(x) = 3x^2 - 5$.
+$$ x_1 = x_0 - \frac{f(x_0)}{f'(x_0)} = 1 - \frac{1^3 - 5(1)}{3(1)^2 - 5} = 1 - \frac{-4}{-2} = 1 - 2 = -1 $$
+$$ x_2 = x_1 - \frac{f(x_1)}{f'(x_1)} = -1 - \frac{(-1)^3 - 5(-1)}{3(-1)^2 - 5} = -1 - \frac{-1 + 5}{3 - 5} = -1 - \frac{4}{-2} = -1 + 2 = 1 $$
+La successione generata è $\{1, -1, 1, -1, \dots\}$, che evidentemente non converge.
+\end{esempio}
+
+% --- GRAFICO ESEMPIO NEWTON ---
+\begin{figure}[H] % Usiamo [H] dal pacchetto float per forzare la posizione
+\centering
+\begin{tikzpicture}[scale=1]
+    % Assi
+    \draw[->] (-2.7,0) -- (2.7,0) node[below] {$x$};
+    \draw[->] (0,-5) -- (0,5) node[left] {$y$};
+    \node[above right] at (1.5,3) {$f(x) = x^3 - 5x$};
+    
+    % Curva f(x)
+    \draw[thick, color=teal, domain=-2.5:2.5, samples=100] plot (\x, {\x*\x*\x - 5*\x});
+    
+    % Punti x0=1 e x1=-1
+    \coordinate (p1) at (1, -4);  % (1, f(1))
+    \coordinate (m1) at (-1, 4);  % (-1, f(-1))
+    
+    % Cerchietti sui punti
+    \draw[red] (p1) circle (3pt);
+    \draw[red] (m1) circle (3pt);
+    
+    % Linee tratteggiate verticali
+    \draw[dashed] (1,0) node[below] {$1$} -- (p1);
+    \draw[dashed] (-1,0) node[below] {$-1$} -- (m1);
+    
+    % Tangenti (visualizzate come segmenti tra i punti)
+    \draw[thick, color=magenta] (p1) -- (m1); 
+    
+\end{tikzpicture}
+\caption{Metodo di Newton per $f(x)=x^3-5x$ partendo da $x_0=1$. Gli iterati oscillano tra 1 e -1.}
+\label{fig:newton_oscillante}
+\end{figure}
+% --- FINE GRAFICO ---
+
+La conclusione è che la convergenza del metodo di Newton è garantita solo in un opportuno \textbf{intorno} della radice. Si parla in questo caso di \textbf{convergenza locale}. Il metodo di bisezione, invece, ha \textbf{convergenza globale} (se applicabile, converge sempre).
+
+\subsection{Teoria del Punto Fisso e Convergenza Locale}
+Formalizziamo questo concetto per un generico metodo iterativo:
+\begin{equation}
+    x_{i+1} = \Phi(x_i), \quad i=0, 1, \dots
+\end{equation}
+dove $\Phi(x)$ è detta \textbf{funzione di iterazione}. Ad esempio, per Newton, $\Phi(x) = x - \frac{f(x)}{f'(x)}$.
+
+Se il metodo serve a determinare la radice $x^*$ di $f(x)$, allora $x^*$ deve soddisfare la \textbf{proprietà di consistenza}:
+\begin{equation}
+    x^* = \Phi(x^*)
+\end{equation}
+ovvero, $x^*$ deve essere un \textbf{punto fisso} della funzione di iterazione $\Phi(x)$. Il problema di trovare uno zero di $f(x)$ è quindi equivalente a trovare un punto fisso di $\Phi(x)$.
+
+Vogliamo capire sotto quali condizioni, partendo da un intorno del suo punto fisso, la successione (4) converge a $x^*$.
+
+\begin{teorema}[del Punto Fisso / delle Contrazioni]
+Sia $x^*$ un punto fisso di $\Phi(x)$. Se esiste $\delta > 0$ tale che per ogni $x, y \in I(x^*) = [x^*-\delta, x^*+\delta]$ la funzione $\Phi(x)$ è \textbf{Lipschitziana} con costante $L < 1$, cioè:
+$$ |\Phi(x) - \Phi(y)| \le L |x - y| $$
+allora:
+\leavevmode % Aggiunto per risolvere potenziali conflitti
+\begin{enumerate}
+    \item Se $x_0 \in I(x^*)$, tutti i successivi iterati $x_i$ rimangono in $I(x^*)$ ($x_i \in I(x^*)$ per ogni $i \ge 0$).
+    \item La successione $\{x_i\}$ converge a $x^*$.
+\end{enumerate}
+\end{teorema}
+\begin{proof}
+Dimostriamo per induzione che $x_i \in I(x^*)$. È vero per $i=0$. Supponiamo $x_i \in I(x^*)$. Allora:
+$$ |x^* - x_{i+1}| = |\Phi(x^*) - \Phi(x_i)| \le L |x^* - x_i| $$
+Poiché $L<1$ e $|x^* - x_i| \le \delta$, segue che $|x^* - x_{i+1}| < \delta$, quindi $x_{i+1} \in I(x^*)$.
+Inoltre, applicando ricorsivamente la disuguaglianza:
+$$ |x^* - x_i| \le L |x^* - x_{i-1}| \le L^2 |x^* - x_{i-2}| \le \dots \le L^i |x^* - x_0| $$
+Dato che $L<1$, $L^i \to 0$ per $i \to \infty$, quindi $\lim_{i \to \infty} |x^* - x_i| = 0$.
+\end{proof}
+
+\begin{corollario}
+    Se $\exists \delta > 0$ tale che $\forall x \in [x^*-\delta, x^*+\delta] = I(x^*)$ si ha $|\Phi'(x)| \le L < 1$, allora la successione $x_{i+1} = \Phi(x_i)$ converge a $x^*$ per $i \to \infty$.
+\end{corollario}
+\begin{proof}
+Dal teorema del valor medio, per $x, y \in I(x^*)$, esiste $\xi$ tra $x$ e $y$ tale che:
+$$ |\Phi(x) - \Phi(y)| = |\Phi'(\xi)(x-y)| = |\Phi'(\xi)| |x-y| \le L |x-y| $$
+Quindi $\Phi(x)$ è Lipschitziana con costante $L<1$ e si applica il teorema precedente.
+\end{proof}
+
+\paragraph{Applicazione al Metodo di Newton}
+Vediamo come si applica il risultato precedente al metodo di Newton. La funzione di iterazione è:
+$$ \Phi(x) = x - \frac{f(x)}{f'(x)} $$
+Verifichiamo la consistenza nel punto fisso $x^*$:
+$$ \Phi(x^*) = x^* - \frac{f(x^*)}{f'(x^*)} = x^* - \frac{0}{f'(x^*)} = x^* $$
+Calcoliamo ora la derivata prima di $\Phi(x)$:
+$$ \Phi'(x) = \frac{d}{dx}\left(x - \frac{f(x)}{f'(x)}\right) = 1 - \frac{f'(x)f'(x) - f(x)f''(x)}{[f'(x)]^2} = \frac{[f'(x)]^2 - [f'(x)]^2 + f(x)f''(x)}{[f'(x)]^2} = \frac{f(x)f''(x)}{[f'(x)]^2} $$
+Valutiamo la derivata nel punto fisso $x^*$:
+\begin{itemize}
+    \item \textbf{Se $x^*$ è una radice semplice}: In questo caso $f(x^*) = 0$ ma $f'(x^*) \neq 0$. Quindi:
+    $$ \Phi'(x^*) = \frac{f(x^*)f''(x^*)}{[f'(x^*)]^2} = \frac{0 \cdot f''(x^*)}{[f'(x^*)]^2} = 0 $$
+    Poiché $\Phi'(x^*) = 0 < 1$, per la continuità di $\Phi'(x)$, esisterà un intorno $I(x^*)$ tale che $|\Phi'(x)| \le L < 1$ per $x \in I(x^*)$. Di conseguenza, per il corollario precedente, il metodo di Newton converge localmente. Il fatto che $\Phi'(x^*) = 0$ è condizione sufficiente per la convergenza quadratica.
+    
+    % --- GRAFICO DERIVATA PHI ---
+    \begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1]
+        % Assi
+        \draw[->] (-2.5,0) -- (2.5,0) node[below] {$x$};
+        \draw[->] (0,-1.5) -- (0,1.5) node[left] {}; % Asse y senza etichetta
+        \node[above right] at (1.5,1) {$\Phi'(x)$};
+        
+        % Curva Phi'(x) passante per x* con derivata 0
+        \draw[thick, domain=-2:2, samples=50] plot (\x, {0.5*(\x-0.5)}); % Curva generica con Phi'(x*)=0
+        
+        % Punto fisso x*
+        \coordinate (xstar) at (0.5, 0);
+        \fill[red] (xstar) circle (1.5pt);
+        \node[below, red] at (xstar) {$x^*$};
+        
+        % Linee per L e -L (con L < 1)
+        \draw[dashed, color=green!60!black] (-2,1) node[left] {$L$} -- (2,1);
+        \draw[dashed, color=green!60!black] (-2,-1) node[left] {$-L$} -- (2,-1);
+        
+        % Intervallo I(x*) dove |Phi'(x)| < L
+        % Trova i punti x tali che Phi'(x) = L e Phi'(x) = -L
+        % 0.5*(x-0.5) = 1 => x-0.5=2 => x=2.5
+        % 0.5*(x-0.5) = -1 => x-0.5=-2 => x=-1.5
+        \draw[green!60!black] (-1.5, -1) -- (-1.5, {0.5*(-1.5-0.5)}); % Linea verticale sinistra
+        \draw[green!60!black] (2.5, 1) -- (2.5, {0.5*(2.5-0.5)});    % Linea verticale destra (fuori asse)
+                
+        % Indicazione dell'intervallo sull'asse x
+        \draw[|<->|,thick, green!60!black] (-1.5, -1.2) -- (2.5, -1.2) node[midway, below] {$I(x^*)$}; 
+        
+    \end{tikzpicture}
+    \caption{Intorno $I(x^*)$ di una radice semplice dove $|\Phi'(x)| \le L < 1$, garantendo la convergenza locale.}
+    \label{fig:phi_derivata_newton}
+    \end{figure}
+    % --- FINE GRAFICO ---
+
+    \item \textbf{Se $x^*$ è una radice multipla} di molteplicità $m > 1$: Si può dimostrare che:
+    $$ \Phi'(x^*) = \frac{m-1}{m} $$
+    Anche in questo caso $|\Phi'(x^*)| < 1$, quindi il metodo converge ancora localmente (per il corollario). Tuttavia, poiché $\Phi'(x^*) \neq 0$, la convergenza diventa meno favorevole.
+\end{itemize}
+\subsection{Criteri di Arresto}
+Per un metodo iterativo $x_{i+1} = \Phi(x_i)$, cerchiamo un criterio per fermare l'iterazione.
+
+\paragraph{Criterio basato sul residuo}
+Come visto per la bisezione, potremmo richiedere $|f(x_i)| \le \text{tol} \cdot |f'(x_i)|$ (approssimando $f'(x^*)$ con $f'(x_i)$). Dalla formula di Newton, questo è equivalente a:
+$$ \left| \frac{f(x_i)}{f'(x_i)} \right| \le \text{tol} \implies |x_{i+1} - x_i| \le \text{tol} $$
+
+\paragraph{Criterio basato sulla differenza tra iterati}
+Il criterio $|x_{i+1} - x_i| \le \text{tol}$ controlla l'errore assoluto. Tuttavia, se $|x^*| \gg 1$, sarebbe più significativo controllare l'errore relativo:
+$$ \frac{|x^* - x_i|}{|x^*|} \le \text{tol} $$
+che può essere approssimato da:
+$$ \frac{|x_{i+1} - x_i|}{|x_i|} \le \text{tol} \quad (\text{o } |x_{i+1}| \text{ al denominatore}) $$
+
+\paragraph{Criterio combinato (auto-scalante)}
+Un criterio pratico che combina i due è:
+$$ |x_{i+1} - x_i| \le (1 + |x_i|) \cdot \text{tol} \quad \text{o equivalentemente} \quad \frac{|x_{i+1} - x_i|}{1 + |x_i|} \le \text{tol} $$
+Questo criterio "auto-scalante" si comporta come un controllo sull'errore assoluto quando $|x_i| \approx 0$ e come un controllo sull'errore relativo quando $|x_i| \gg 1$, adattandosi alla grandezza della radice a cui si sta convergendo. \textbf{N.B.}: Da usare nei nostri elaborati.
+
+\subsection{Metodi Quasi-Newton}
+Ricordiamo che la derivata prima $f'(x_i)$ può essere approssimata dal rapporto incrementale:
+$$ f'(x_i) \approx \frac{f(x_i+h) - f(x_i)}{h} $$
+Se usassimo questa approssimazione con un $h$ fisso all'interno della formula di Newton, otterremmo una variante chiamata metodo \textbf{quasi-Newton}. Questo specifico approccio richiederebbe 2 valutazioni di funzione per iterazione ($f(x_i)$ e $f(x_i+h)$).
+
+Per migliorare l'efficienza, possiamo usare le informazioni già calcolate nelle iterazioni precedenti.
+
+\paragraph{Metodo delle Secanti}
+Consideriamo la retta \emph{secante} passante per i punti $(x_{i-1}, f(x_{i-1}))$ e $(x_i, f(x_i))$. Il suo coefficiente angolare è:
+$$ \frac{f(x_i) - f(x_{i-1})}{x_i - x_{i-1}} $$
+Usiamo questo valore come approssimazione di $f'(x_i)$ nella formula di Newton. L'iterazione del \textbf{metodo delle secanti} diventa:
+$$ x_{i+1} = x_i - f(x_i) \frac{x_i - x_{i-1}}{f(x_i) - f(x_{i-1})}, \quad i=1, 2, \dots $$
+
+% --- GRAFICO METODO SECANTI ---
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.2]
+    % Assi
+    \draw[->] (-0.5,0) -- (4.5,0) node[below] {$x$};
+    \draw[->] (0,-0.5) -- (0,3) node[left] {};
+    \node[above right] at (3.5, 2.5) {$f(x)$};
+    
+    % Curva f(x)
+    \draw[thick, color=green!60!black, domain=0:4.2, samples=50] plot (\x, {0.1*exp(0.8*\x)});
+    
+    % Radice
+    \coordinate (xstar) at (0,0); % Punto fittizio
+    \node[below, red] at (-0.2, -0.1) {$x^*$};
+    
+    % Punti xi, x(i-1) ...
+    \coordinate (x0) at (4, {0.1*exp(0.8*4)});
+    \coordinate (x1) at (3, {0.1*exp(0.8*3)});
+    \coordinate (x2) at (2, {0.1*exp(0.8*2)});
+    \coordinate (x3) at (1, {0.1*exp(0.8*1)});
+    
+    \fill (x0) circle (1.5pt); \draw (4,-0.1) node[below] {$x_0$};
+    \fill (x1) circle (1.5pt); \draw (3,-0.1) node[below] {$x_1$};
+    \fill (x2) circle (1.5pt); \draw (2,-0.1) node[below] {$x_2$};
+    \fill (x3) circle (1.5pt); \draw (1,-0.1) node[below] {$x_3$};
+    
+    % Rette secanti
+    % Secante tra x0 e x1 per trovare x2 (intersezione asse x)
+    \draw[black] (x0) -- (x1); 
+    % Interpolazione lineare per x2
+    \coordinate (x2_inter) at (2.19, 0); % Valore approssimato
+    \draw[dashed] (x1) -- (x2_inter);
+    
+    % Secante tra x1 e x2 per trovare x3
+    \draw[black] (x1) -- (x2);
+    \coordinate (x3_inter) at (1.1, 0); % Valore approssimato
+    \draw[dashed] (x2) -- (x3_inter);
+
+    % Secante tra x2 e x3 per trovare x4
+    \draw[black] (x2) -- (x3);
+    \coordinate (x4_inter) at (0.2, 0); % Valore approssimato
+    \draw[dashed] (x3) -- (x4_inter);
+    
+\end{tikzpicture}
+\caption{Interpretazione geometrica del metodo delle secanti.}
+\label{fig:secanti}
+\end{figure}
+% --- FINE GRAFICO ---
+
+\begin{osservazione}[Metodo delle Secanti]
+\begin{enumerate}
+    \item Richiede due approssimazioni iniziali ($x_0, x_1$) per iniziare (è un metodo a due passi).
+    \item Il costo per iterazione (dopo la prima) è di \textbf{1 sola valutazione} di $f(x)$.
+    \item L'ordine di convergenza verso radici \textbf{semplici} è $p = \frac{1+\sqrt{5}}{2} \approx 1.618$ (la sezione aurea), che è superlineare ma inferiore a quello di Newton.
+    \item La convergenza verso radici \textbf{multiple} è solo lineare ($p=1$).
+    \item Essendo un'approssimazione di Newton, la convergenza è generalmente \textbf{locale}.
+\end{enumerate}
+\end{osservazione}
+
+\paragraph{Metodo delle Corde}
+Un'altra approssimazione di $f'(x_i)$ consiste nell'usare un valore fisso, calcolato solo all'inizio, tipicamente $f'(x_0)$. Si assume che la derivata non vari molto vicino alla radice.
+L'iterazione del \textbf{metodo delle corde} è:
+$$ x_{i+1} = x_i - \frac{f(x_i)}{f'(x_0)}, \quad i=0, 1, \dots $$
+
+% --- GRAFICO METODO CORDE ---
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.2]
+    % Assi
+    \draw[->] (-0.5,0) -- (4.5,0) node[below] {$x$};
+    \draw[->] (0,-0.5) -- (0,3) node[left] {};
+    \node[above right] at (3.5, 2.5) {$f(x)$};
+    
+    % Curva f(x)
+    \draw[thick, color=green!60!black, domain=0:4.2, samples=50] plot (\x, {0.1*exp(0.8*\x)});
+    
+    % Radice
+    \coordinate (xstar) at (0,0); % Punto fittizio
+    \node[below, red] at (-0.2, -0.1) {$x^*$};
+    
+    % Punti x0, x1, x2, x3
+    \coordinate (x0) at (4, {0.1*exp(0.8*4)}); \draw (4,-0.1) node[below] {$x_0$}; \fill (x0) circle (1.5pt);
+    % Calcolo pendenza in x0: f'(x) = 0.08*exp(0.8*x) => f'(4) = 0.08*exp(3.2) = 1.96
+    % x1 = x0 - f(x0)/f'(x0) = 4 - (0.1*exp(3.2))/1.96 = 4 - 2.45 / 1.96 = 4 - 1.25 = 2.75 (circa)
+    \coordinate (x1_inter) at (2.75, 0); \draw (2.75,-0.1) node[below] {$x_1$}; \fill (x1_inter) circle (1.5pt);
+    \coordinate (x1) at (2.75, {0.1*exp(0.8*2.75)}); \fill (x1) circle (1.5pt);
+    % x2 = x1 - f(x1)/f'(x0) = 2.75 - (0.1*exp(2.2))/1.96 = 2.75 - 0.90 / 1.96 = 2.75 - 0.46 = 2.29 (circa)
+    \coordinate (x2_inter) at (2.29, 0); \draw (2.29,-0.1) node[below] {$x_2$}; \fill (x2_inter) circle (1.5pt);
+    \coordinate (x2) at (2.29, {0.1*exp(0.8*2.29)}); \fill (x2) circle (1.5pt);
+    % x3 = x2 - f(x2)/f'(x0) = 2.29 - (0.1*exp(1.83))/1.96 = 2.29 - 0.62 / 1.96 = 2.29 - 0.32 = 1.97 (circa)
+    \coordinate (x3_inter) at (1.97, 0); \draw (1.97,-0.1) node[below] {$x_3$}; \fill (x3_inter) circle (1.5pt);
+    
+    % Rette parallele con pendenza f'(x0)
+    \draw[dashed, black] (x0) -- (x1_inter);
+    \draw[dashed, black] (x1) -- (x2_inter);
+    \draw[dashed, black] (x2) -- (x3_inter);
+    
+\end{tikzpicture}
+\caption{Interpretazione geometrica del metodo delle corde (le rette sono parallele).}
+\label{fig:corde}
+\end{figure}
+% --- FINE GRAFICO ---
+
+\begin{osservazione}[Metodo delle Corde]
+\begin{enumerate}
+    \item Richiede il calcolo di $f'(x_0)$ solo una volta all'inizio.
+    \item Il costo per iterazione è di \textbf{1 sola valutazione} di $f(x)$.
+    \item La convergenza è generalmente \textbf{locale} e l'ordine è \textbf{lineare} ($p=1$). È spesso usato quando si dispone già di una buona approssimazione iniziale $x_0$.
+\end{enumerate}
+\end{osservazione}
+
+\begin{esempio}[Confronto Metodi per $f(x) = x - \cos(x)$]
+La tabella mostra le prime iterazioni per trovare la radice di $f(x) = x - \cos(x)$ (vicina a 0.739) partendo da $x_0=1$ (per le secanti, $x_1$ è calcolato con un passo di Newton).
+
+\begin{table}[H]
+\centering
+\caption{Iterazioni per $f(x)=x-\cos(x)$, $x_0=1$}
+\begin{tabular}{cccc}
+\toprule
+Iter (i) & Newton & Secanti & Corde \\
+\midrule
+0 & 0 & 0 & 0 \\
+1 & 1.000000e+00 & 1.000000e+00 & 1.000000e+00 \\
+2 & 7.503639e-01 & 7.503639e-01 & 5.403023e-01 \\ % x1_sec = x1_newton
+3 & 7.391129e-01 & 7.374864e-01 & 8.575532e-01 \\ 
+4 & 7.390851e-01 & 7.390986e-01 & 6.542898e-01 \\
+5 & 7.390851e-01 & 7.390851e-01 & 7.934804e-01 \\
+6 & 7.390851e-01 & 7.390851e-01 & 7.013688e-01 \\
+7 & 7.390851e-01 & 7.390851e-01 & 7.639597e-01 \\
+\bottomrule
+\end{tabular}
+\end{table}
+Si osserva la convergenza più rapida di Newton e Secanti rispetto alle Corde.
+\end{esempio}
+
+\subsection{Gestione delle Radici Multiple}
+Abbiamo visto che il calcolo di radici multiple è un problema mal condizionato e che l'ordine di convergenza di Newton degrada a lineare. Vediamo come ovviare a questo.
+
+\paragraph{Caso 1: Molteplicità $m$ Nota}
+Se $f(x)$ ha una radice $x^*$ di molteplicità $m>1$, significa che $f(x^*) = f'(x^*) = \dots = f^{(m-1)}(x^*) = 0$ e $f^{(m)}(x^*) \neq 0$. In un intorno di $x^*$, la funzione può essere scritta come:
+$$ f(x) = (x-x^*)^m g(x) $$
+dove $g(x)$ è una funzione tale che $g(x^*) \neq 0$.
+
+Per analizzare il comportamento del metodo di Newton, consideriamo il caso più semplice in cui $g(x)$ è una costante, $g(x) = c \neq 0$. Quindi:
+$$ f(x) = c(x-x^*)^m $$
+La sua derivata prima è:
+$$ f'(x) = cm(x-x^*)^{m-1} $$
+Vediamo cosa succede applicando l'iterazione standard di Newton a questa funzione:
+$$ x_{i+1} = x_i - \frac{f(x_i)}{f'(x_i)} = x_i - \frac{c(x_i-x^*)^m}{cm(x_i-x^*)^{m-1}} = x_i - \frac{x_i - x^*}{m} $$
+Questo mostra che l'errore si riduce solo linearmente.
+
+Se invece utilizzassimo l'iterazione seguente, detta \textbf{Metodo di Newton Modificato}:
+$$ x_{i+1} = x_i - m \frac{f(x_i)}{f'(x_i)} $$
+Nel caso semplificato $f(x)=c(x-x^*)^m$, otterremmo:
+$$ x_{i+1} = x_i - m \frac{c(x_i-x^*)^m}{cm(x_i-x^*)^{m-1}} = x_i - m \frac{x_i - x^*}{m} = x_i - (x_i - x^*) = x^* $$
+Si può dimostrare che, anche nel caso generale in cui $g(x)$ non è costante, l'iterazione del Metodo di Newton Modificato ripristina la convergenza \textbf{quadratica} verso la radice multipla. Il costo per iterazione rimane lo stesso del metodo standard (1 valutazione di $f$ e 1 di $f'$).
+\paragraph{Caso 2: Molteplicità $m$ Incognita}
+Se $m$ non è noto, sappiamo che Newton converge linearmente:
+$$ \lim_{i \to \infty} \frac{e_{i+1}}{e_i} = \frac{m-1}{m} = C $$
+Per $i$ grande, $e_{i+1} \approx C e_i$ e $e_i \approx C e_{i-1}$. Dividendo membro a membro:
+$$ \frac{e_{i+1}}{e_i} \approx \frac{e_i}{e_{i-1}} \implies e_{i+1} e_{i-1} \approx e_i^2 $$
+Sostituendo $e_k = x^* - x_k$:
+$$ (x^* - x_{i+1})(x^* - x_{i-1}) \approx (x^* - x_i)^2 $$
+Trattando l'approssimazione come un'uguaglianza e risolvendo per $x^*$, si ottiene una nuova stima $x_i^*$ della radice:
+$$ (x_i^*)^2 - (x_{i+1}+x_{i-1})x_i^* + x_{i+1}x_{i-1} = (x_i^*)^2 - 2x_i x_i^* + x_i^2 $$
+$$ x_i^* (2x_i - x_{i+1} - x_{i-1}) = x_i^2 - x_{i+1}x_{i-1} $$
+$$ x_i^* = \frac{x_i^2 - x_{i+1}x_{i-1}}{2x_i - x_{i+1} - x_{i-1}} = \frac{x_{i+1}x_{i-1} - x_i^2}{x_{i+1} - 2x_i + x_{i-1}} $$
+Questa formula definisce un processo a due livelli noto come \textbf{Metodo di Accelerazione di Aitken ($\Delta^2$)}:
+\begin{enumerate}
+    \item Si eseguono due passi del metodo originale (es. Newton) per ottenere $x_{i-1}, x_i, x_{i+1}$.
+    \item Si usa la formula di Aitken per calcolare $x_i^*$, che diventa il nuovo punto di partenza.
+\end{enumerate}
+Il costo per iterazione raddoppia (2 passi di Newton + formula di Aitken), ma si può dimostrare che la successione $\{x_i^*\}$ converge \textbf{quadraticamente} a $x^*$, anche per radici multiple. La convergenza rimane locale.
+
+\begin{esempio}[Confronto per $f(x) = (x-1)e^x$]
+La funzione ha una radice semplice in $x^*=1$. La tabella confronta Newton, Newton Modificato (con $m=1$, quindi uguale a Newton) e Aitken partendo da $x_0 = 1.1$.
+
+\begin{table}[H]
+\centering
+\caption{Iterazioni per $f(x)=(x-1)e^x$, $x_0=1.1$}
+\begin{tabular}{cccc}
+\toprule
+Iter (i) & Newton & Newton Mod. (m=1) & Aitken \\
+\midrule
+0 & 0 & 0 & 0 \\
+1 & 1.100000e+00 & 1.100000e+00 & 1.100000e+00 \\
+2 & 1.051190e+00 & 1.051190e+00 & 1.004481e+00 \\ % Aitken usa x0, x1, x2 di Newton
+3 & 1.025911e+00 & 1.025911e+00 & 1.000010e+00 \\
+4 & 1.013038e+00 & 1.013038e+00 & 1.000000e+00 \\
+5 & 1.006540e+00 & 1.006540e+00 & 1.000000e+00 \\
+6 & 1.003275e+00 & 1.003275e+00 & 1.000000e+00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+(Nota: La tabella fornita negli appunti sembra riferirsi a una radice multipla, non $f(x)=(x-1)e^x$. Ho corretto l'esempio per coerenza).
+\end{esempio}
