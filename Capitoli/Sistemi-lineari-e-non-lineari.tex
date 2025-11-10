@@ -105,3 +105,154 @@ In conclusione, per risolvere un sistema diagonale $n \times n$ sono sufficienti
     \item Memoria per 2 vettori di lunghezza $n$ (uno per la diagonale di $A$, uno per $\mathbf{b}$ che viene sovrascritto con $\mathbf{x}$).
     \item $n$ operazioni algebriche (flops).
 \end{itemize}
+
+
+%----LEZIONE 29 OTTOBRE-----%
+% Riguardare l'Appendice A del libro
+\subsection{Prodotto Matrice-Vettore}
+Ricordiamo la notazione: $A = (\mathbf{c}_1 | \dots | \mathbf{c}_n) = \begin{pmatrix} \mathbf{r}_1^T \\ \vdots \\ \mathbf{r}_n^T \end{pmatrix}$.
+Definiamo i versori della base canonica di $\mathbb{R}^n$:
+$$ \mathbf{e}_i = \begin{pmatrix} 0 \\ \vdots \\ 1 \\ \vdots \\ 0 \end{pmatrix} \leftarrow \text{posizione } i $$
+Allora:
+\begin{itemize}
+    \item $\mathbf{e}_i^T A = \mathbf{r}_i^T$ (seleziona l'$i$-esima riga di $A$)
+    \item $A \mathbf{e}_j = \mathbf{c}_j$ (seleziona la $j$-esima colonna di $A$)
+    \item $\mathbf{e}_i^T A \mathbf{e}_j = a_{ij}$ (seleziona l'elemento $(i,j)$)
+\end{itemize}
+Inoltre, la matrice identità $I \in \mathbb{R}^{n \times n}$ si può scrivere come:
+$$ I = \sum_{j=1}^n \mathbf{e}_j \mathbf{e}_j^T $$
+
+Calcolare $\mathbf{y} = A\mathbf{x}$ può essere fatto in due modi equivalenti:
+
+\paragraph{1. Prodotto righe per colonne (prodotto scalare)}
+L'elemento $i$-esimo di $\mathbf{y}$ è il prodotto scalare tra l'$i$-esima riga di $A$ e il vettore $\mathbf{x}$:
+\begin{equation}
+    y_i = \mathbf{r}_i^T \mathbf{x} = \sum_{j=1}^n a_{ij} x_j, \quad \text{per } i=1, \dots, n
+\end{equation}
+
+\paragraph{2. Combinazione lineare di colonne (operazione "axpy")}
+Il vettore $\mathbf{y}$ è una combinazione lineare delle colonne di $A$, con coefficienti gli elementi di $\mathbf{x}$:
+\begin{equation}
+    \mathbf{y} = A \mathbf{x} = A (I \mathbf{x}) = A \left(\sum_{j=1}^n \mathbf{e}_j \mathbf{e}_j^T\right) \mathbf{x} = \sum_{j=1}^n (A \mathbf{e}_j) (\mathbf{e}_j^T \mathbf{x}) = \sum_{j=1}^n \mathbf{c}_j x_j
+\end{equation}
+
+\paragraph{Implementazione e Costo}
+Entrambi gli approcci hanno un costo di $O(n^2)$ flops. Per $A \in \mathbb{R}^{n \times n}$, il costo è $\approx 2n^2$ flops (se $A \in \mathbb{R}^{m \times n}$, $\approx 2mn$ flops).
+
+\begin{itemize}
+    \item \textbf{Algoritmo (2) - Righe per Colonne (accesso per righe)}:
+    \begin{lstlisting}[numbers=none, frame=none, basicstyle=\ttfamily]
+for i = 1:n
+    % y(i) = 0; (inizializzazione)
+    for j = 1:n
+        y(i) = y(i) + A(i,j) * x(j); % Prodotto scalare
+    end
+end
+    \end{lstlisting}
+    
+    \item \textbf{Algoritmo (3) - Combinazione Lineare (accesso per colonne)}:
+    \begin{lstlisting}[numbers=none, frame=none, basicstyle=\ttfamily]
+% y = zeros(n,1); (inizializzazione)
+for j = 1:n
+    for i = 1:n
+        y(i) = y(i) + A(i,j) * x(j); % Operazione axpy
+    end
+end
+    \end{lstlisting}
+\end{itemize}
+
+La scelta tra (2) e (3) dipende dalla modalità di memorizzazione della matrice nel linguaggio di programmazione (per righe o per colonne), per sfruttare al meglio la località dei dati.
+
+
+\subsection{Matrici Triangolari}
+\begin{definition}
+Una matrice $A=(a_{ij}) \in \mathbb{R}^{n \times n}$ è:
+\begin{itemize}
+    \item \textbf{Triangolare inferiore} se $a_{ij} = 0$ per $j > i$ (elementi sopra la diagonale nulli).
+    \item \textbf{Triangolare superiore} se $a_{ij} = 0$ per $i > j$ (elementi sotto la diagonale nulli).
+\end{itemize}
+\end{definition}
+
+\begin{osservazione}
+Una matrice che è contemporaneamente triangolare inferiore e superiore è una matrice \textbf{diagonale}.
+\end{osservazione}
+
+\begin{teorema}
+Se $A$ è una matrice triangolare (inferiore o superiore), il suo determinante è il prodotto degli elementi diagonali:
+$$ \det(A) = \prod_{i=1}^n a_{ii} $$
+Ne consegue che $A$ è nonsingolare ($\det(A) \neq 0$) se e solo se tutti i suoi elementi diagonali sono non nulli ($a_{ii} \neq 0$ per ogni $i$).
+\end{teorema}
+
+\paragraph{Risoluzione di Sistemi Triangolari Inferiori}
+Esaminiamo il caso $A\mathbf{x} = \mathbf{b}$ con $A$ triangolare inferiore (il caso superiore è analogo).
+\[
+\begin{pmatrix}
+    a_{11} & 0 & \dots & 0 \\
+    a_{21} & a_{22} & \dots & 0 \\
+    \vdots & \vdots & \ddots & \vdots \\
+    a_{n1} & a_{n2} & \dots & a_{nn}
+\end{pmatrix}
+\begin{pmatrix} x_1 \\ x_2 \\ \vdots \\ x_n \end{pmatrix} = 
+\begin{pmatrix} b_1 \\ b_2 \\ \vdots \\ b_n \end{pmatrix}
+\]
+Il sistema è:
+\[
+\begin{array}{lcr}
+a_{11}x_1 & = & b_1 \\
+a_{21}x_1 + a_{22}x_2 & = & b_2 \\
+\vdots & & \vdots \\
+a_{n1}x_1 + a_{n2}x_2 + \dots + a_{nn}x_n & = & b_n
+\end{array}
+\]
+Possiamo risolvere il sistema mediante \textbf{sostituzioni successive in avanti}:
+\begin{enumerate}
+    \item Dalla prima equazione ricaviamo $x_1 = b_1 / a_{11}$.
+    \item Sostituiamo $x_1$ nella seconda e ricaviamo $x_2 = (b_2 - a_{21}x_1) / a_{22}$.
+    \item E così via...
+\end{enumerate}
+La formula generale per $i=1, \dots, n$ è:
+\begin{equation} \label{eq:sost_avanti}
+    x_i = \frac{b_i - \sum_{j=1}^{i-1} a_{ij}x_j}{a_{ii}}
+\end{equation}
+(con la convenzione $\sum_{j=1}^0 (\dots) = 0$).
+
+\paragraph{Costo Computazionale}
+Dalla formula \eqref{eq:sost_avanti} otteniamo che:
+\begin{itemize}
+    \item L'algoritmo risolutivo è ben definito se e solo se $a_{ii} \neq 0$ per $i=1, \dots, n$, il che è vero poiché $\det(A) \neq 0$ (come abbiamo assunto).
+    \item Il numero di operazioni all'iterazione $i$-esima è $2i-1$ flops.
+    \item Il costo totale è di $\sum_{i=1}^{n}(2i-1) = 2\sum_{i=1}^{n}i - n = 2\frac{n(n+1)}{2} - n = n^2$ flops.
+    \item Anche la memoria richiesta è $\sim \frac{n^2}{2}$ posizioni di memoria.
+\end{itemize}
+Pertanto la complessità è $O(n^2)$, sia in termini di memoria che di flops.
+
+\paragraph{Algoritmi di Sostituzione in Avanti}
+Scriviamo uno pseudo-codice per la formula \eqref{eq:sost_avanti}, in cui supponiamo di avere i vettori $\mathbf{x}$ e $\mathbf{b}$ e la matrice $A$ $n \times n$. Inizializziamo $\mathbf{x} \leftarrow \mathbf{b}$, ovvero assumiamo che il vettore $\mathbf{b}$ sia memorizzato in $\mathbf{x}$ e venga sovrascritto dalla soluzione.
+
+\begin{itemize}
+    \item \textbf{Versione "per righe" (accesso per righe ad A)}:
+    \begin{lstlisting}[numbers=none, frame=none, basicstyle=\ttfamily]
+% Algoritmo (5) - Sostituzione in avanti per righe
+for i = 1:n
+    for j = 1:i-1
+        x(i) = x(i) - A(i,j) * x(j); % (scal)
+    end
+    x(i) = x(i) / A(i,i);
+end
+    \end{lstlisting}
+    
+    \item \textbf{Versione "per colonne" (accesso per colonne ad A)}:
+    \begin{lstlisting}[numbers=none, frame=none, basicstyle=\ttfamily]
+% Algoritmo (6) - Sostituzione in avanti per colonne
+for j = 1:n
+    x(j) = x(j) / A(j,j);
+    for i = j+1:n
+        x(i) = x(i) - A(i,j) * x(j); % (axpy)
+    end
+end
+    \end{lstlisting}
+\end{itemize}
+
+\begin{osservazione}
+    Osserviamo che i due algoritmi, sebbene algebricamente equivalenti, in aritmetica finita producono generalmente risultati non uguali.
+    \end{osservazione}
