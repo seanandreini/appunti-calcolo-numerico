@@ -256,3 +256,523 @@ end
 \begin{osservazione}
     Osserviamo che i due algoritmi, sebbene algebricamente equivalenti, in aritmetica finita producono generalmente risultati non uguali.
     \end{osservazione}
+
+% --- LEZIONE 4 NOVEMBRE ---
+
+\paragraph{Risoluzione di Sistemi Triangolari Superiori}
+Esaminiamo ora il caso in cui $A$ sia triangolare superiore. Il caso è analogo a quello inferiore.
+\[ A = 
+\begin{pmatrix}
+    a_{11} & a_{12} & \dots & a_{1n} \\
+    0 & a_{22} & \dots & a_{2n} \\
+    \vdots & \vdots & \ddots & \vdots \\
+    0 & 0 & \dots & a_{nn}
+\end{pmatrix}
+\]
+Ricordiamo che $A$ è nonsingolare se e solo se $a_{ii} \neq 0$ per ogni $i$.
+
+Il sistema $A\mathbf{x} = \mathbf{b}$ diventa:
+\[
+\begin{array}{r c c c c c c l}
+a_{11}x_1 & + & a_{12}x_2 & + & \dots & + & a_{1n}x_n & = b_1 \\
+          &   & a_{22}x_2 & + & \dots & + & a_{2n}x_n & = b_2 \\
+          &   &           & \ddots &       & \vdots   & \vdots & \vdots \\
+          &   &           &        &       & a_{nn}x_n & = b_n
+\end{array}
+\]
+Questo sistema può essere risolto mediante \textbf{sostituzioni successive all'indietro}. Partendo dall'ultima equazione e risalendo:
+$$ x_{n-i} = \frac{b_{n-i} - \sum_{j=n-i+1}^n a_{n-i, j} x_j}{a_{n-i, n-i}}, \quad i=0, \dots, n-1 $$
+Il costo computazionale è identico al caso triangolare inferiore, ovvero $n^2$ flops.
+
+\paragraph{Algoritmi di Sostituzione all'Indietro}
+Anche in questo caso, possiamo codificare la soluzione in due modi algebricamente equivalenti, con diverso accesso ai dati. 
+Sia \texttt{a} un array $n \times n$ contenente gli elementi della matrice $A$, e sia \texttt{x} un vettore di lunghezza $n$, che inizializziamo con il vettore dei termini noti $\mathbf{b}$:
+\[ \mathbf{x} \leftarrow \mathbf{b} \]
+(Assumiamo $\mathbf{x}$ sovrascriva $\mathbf{b}$).
+
+\begin{itemize}
+    \item \textbf{Versione "per righe" (accesso per righe ad A)}:
+    \begin{lstlisting}[numbers=none, frame=none, basicstyle=\ttfamily]
+% Sostituzione all'indietro (per righe)
+for i = n:-1:1
+    for j = i+1:n
+        x(i) = x(i) - A(i,j) * x(j); % (scal)
+    end
+    x(i) = x(i) / A(i,i);
+end
+    \end{lstlisting}
+    
+    \item \textbf{Versione "per colonne" (accesso per colonne ad A)}:
+    \begin{lstlisting}[numbers=none, frame=none, basicstyle=\ttfamily]
+% Sostituzione all'indietro (per colonne)
+for j = n:-1:1
+    x(j) = x(j) / A(j,j);
+    for i = 1:j-1
+        x(i) = x(i) - A(i,j) * x(j); % (axpy)
+    end
+end
+    \end{lstlisting}
+\end{itemize}
+
+\begin{osservazione}[Vettorizzazione in Matlab]
+Ove possibile, utilizzare in Matlab la notazione vettoriale. L'ultimo algoritmo (accesso "per colonne") può essere riscritto in modo più efficiente e compatto:
+\begin{lstlisting}
+% Sostituzione all'indietro (vettorizzata)
+for j = n:-1:1
+    x(j) = x(j) / A(j,j);
+    x(1:j-1) = x(1:j-1) - A(1:j-1, j) * x(j);
+end
+\end{lstlisting}
+Questa ultima scrittura è sostanzialmente più efficiente. Usatela.
+\end{osservazione}
+
+\begin{esercizio}[Proprietà delle Matrici Triangolari]
+Dimostrare le seguenti proprietà per $A, B$ matrici triangolari $n \times n$:
+\begin{enumerate}
+    \item[A)] Se $A, B$ sono triangolari inferiori (risp. superiori), allora $C=A+B$ e $C=A \cdot B$ sono anch'esse triangolari inferiori (risp. superiori).
+    Inoltre, per gli elementi diagonali vale: $c_{ii} = a_{ii} + b_{ii}$ (per la somma) e $c_{ii} = a_{ii} \cdot b_{ii}$ (per il prodotto).
+    
+    \item[B)] Se $A, B$ sono triangolari inferiori (risp. superiori) a \textbf{diagonale unitaria}, allora $C=A \cdot B$ è anch'essa triangolare inferiore (risp. superiore) a diagonale unitaria.
+    
+    \item[C)] Se $A$ è triangolare (inf. o sup.) e nonsingolare, allora $A^{-1}$ è dello stesso tipo (inf. o sup.) e $(A^{-1})_{ii} = a_{ii}^{-1}$.
+    
+    \item[D)] Se $A$ è triangolare (inf. o sup.) a diagonale unitaria, allora $A^{-1}$ è anch'essa triangolare (inf. o sup.) a diagonale unitaria.
+\end{enumerate}
+\end{esercizio}
+
+\begin{proof}[Dimostrazione (Proprietà A)]
+    Che $C=A+B$ sia triangolare dello stesso tipo di $A$ e $B$, discende dal fatto che $c_{ij} = a_{ij} + b_{ij}$.
+    
+    Se $C=A \cdot B$, supponiamo che $A$ e $B$ siano \textbf{triangolari inferiori}, ovvero $a_{ij}=b_{ij}=0$ se $j>i$. Dobbiamo dimostrare che: 1) $c_{ij}=0$ se $j>i$, e 2) $c_{ii} = a_{ii} \cdot b_{ii}$.
+    
+    Infatti, se $\mathbf{e}_i, \mathbf{e}_j \in \mathbb{R}^n$ sono i versori $i$ e $j$:
+    \begin{align*}
+        c_{ij} &= \mathbf{e}_i^T C \mathbf{e}_j = (\mathbf{e}_i^T A) (B \mathbf{e}_j) \\
+             &= 
+        \begin{pmatrix}
+            a_{i1} & \dots & a_{ii} & \overbrace{0 \dots 0}^{n-i}
+        \end{pmatrix}
+        \begin{pmatrix}
+            0 \\ \vdots \\ 0 \\ b_{jj} \\ \vdots \\ b_{nj}
+        \end{pmatrix}
+        \left. \vphantom{\begin{matrix} 0 \\ \vdots \\ 0 \end{matrix}} \right\} j-1 \text{ zeri}
+        \\
+        &=
+        \begin{cases} 
+            a_{ii} \cdot b_{ii} & \text{se } i=j \\
+            0 & \text{se } j>i \text{ (o } i<j \text{)}
+        \end{cases}
+    \end{align*}
+    
+    \end{proof}
+
+\subsection{Matrici Ortogonali}
+\begin{definition}
+Una matrice $A \in \mathbb{R}^{n \times n}$ è \textbf{ortogonale} se $A^T A = A A^T = I$.
+Questo significa che l'inversa di $A$ è la sua trasposta: $A^{-1} = A^T$.
+\end{definition}
+In questo caso, la soluzione del sistema $A\mathbf{x} = \mathbf{b}$ è immediata:
+$$ \mathbf{x} = A^{-1}\mathbf{b} = A^T \mathbf{b} $$
+La soluzione si ottiene con un prodotto matrice-vettore (costo $\approx 2n^2$ flops).
+
+\subsection{Metodi di Fattorizzazione}
+L'analisi dei casi semplici ci permette di affrontare il caso generale $A\mathbf{x} = \mathbf{b}$ (con $A \in \mathbb{R}^{n \times n}$ nonsingolare). I metodi che esamineremo sono detti \textbf{metodi di fattorizzazione}.
+Si cercherà una decomposizione (fattorizzazione) di $A$ del tipo:
+$$ A = F_1 F_2 \dots F_k $$
+dove $k$ è "piccolo" e i fattori $F_i$ sono matrici di tipo "semplice" (diagonali, triangolari o ortogonali), per cui i sistemi lineari con tali fattori sono facilmente risolvibili.
+
+Se $A = F_1 F_2$ (caso $k=2$), il sistema $A\mathbf{x} = \mathbf{b}$ diventa $F_1(F_2 \mathbf{x}) = \mathbf{b}$.
+Possiamo risolverlo in due passi:
+\begin{enumerate}
+    \item Risolvi $F_1 \mathbf{y} = \mathbf{b}$ per trovare $\mathbf{y}$.
+    \item Risolvi $F_2 \mathbf{x} = \mathbf{y}$ per trovare $\mathbf{x}$.
+\end{enumerate}
+In generale, per $A = F_1 \dots F_k$, posto $\mathbf{x}_0 = \mathbf{b}$, si risolvono i $k$ sistemi $F_i \mathbf{x}_i = \mathbf{x}_{i-1}$ per $i=1, \dots, k$. La soluzione finale sarà $\mathbf{x} = \mathbf{x}_k$.
+
+\begin{osservazione}[Implementazione]
+\begin{enumerate}
+    \item In pratica, non sarà necessario memorizzare esplicitamente i fattori $F_i$, ma si potrà sovrascrivere la matrice $A$ con l'informazione relativa ai suoi fattori.
+    \item Non sarà necessario memorizzare le soluzioni intermedie. Lo stesso vettore può contenere il termine noto $\mathbf{b}$ e poi essere sovrascritto con le soluzioni intermedie.
+\end{enumerate}
+\end{osservazione}
+
+\subsection{Fattorizzazione LU di una matrice}
+\begin{definition}
+Una matrice $A \in \mathbb{R}^{n \times n}$ (nonsingolare) è \textbf{fattorizzabile LU} se esistono:
+\begin{itemize}
+    \item $L$: matrice triangolare inferiore a \textbf{diagonale unitaria} ($l_{ii}=1$).
+    \item $U$: matrice triangolare superiore.
+\end{itemize}
+tali che $A = L U$.
+\end{definition}
+
+\begin{osservazione}
+Se $A=LU$, per risolvere $A\mathbf{x}=\mathbf{b}$ si risolvono i due sistemi di tipo semplice $L\mathbf{y}=\mathbf{b}$ e $U\mathbf{x}=\mathbf{y}$, con un costo totale di $2n^2$ flops.
+\end{osservazione}
+
+\begin{teorema}[Unicità della Fattorizzazione LU]
+Se $A$ è nonsingolare e la fattorizzazione $A=LU$ (con $L$ a diagonale unitaria) esiste, allora tale fattorizzazione è unica.
+\end{teorema}
+\begin{proof}
+Supponiamo per assurdo che esistano due fattorizzazioni $A = L_1 U_1$ e $A = L_2 U_2$.
+Poiché $L_1, L_2$ hanno diagonale unitaria, $\det(L_1) = \det(L_2) = 1$.
+Dato che $A$ è nonsingolare, $0 \neq \det(A) = \det(L_1)\det(U_1) = \det(U_1)$. Quindi $U_1$ (e analogamente $U_2$) è nonsingolare.
+
+Dall'uguaglianza $L_1 U_1 = L_2 U_2$, moltiplichiamo a sinistra per $L_2^{-1}$ e a destra per $U_1^{-1}$:
+$$ L_2^{-1} (L_1 U_1) U_1^{-1} = L_2^{-1} (L_2 U_2) U_1^{-1} $$
+$$ (L_2^{-1} L_1) (U_1 U_1^{-1}) = (L_2^{-1} L_2) (U_2 U_1^{-1}) $$
+$$ L_2^{-1} L_1 = U_2 U_1^{-1} $$
+La matrice $L_2^{-1} L_1$ è triangolare inferiore a diagonale unitaria (dalle proprietà delle matrici triangolari).
+La matrice $U_2 U_1^{-1}$ è triangolare superiore.
+L'unica matrice che è contemporaneamente triangolare inferiore e superiore è una matrice diagonale. Poiché $L_2^{-1} L_1$ ha diagonale unitaria, questa matrice diagonale deve essere la matrice identità $I$.
+Quindi:
+$$ L_2^{-1} L_1 = I \implies L_1 = L_2 $$
+$$ U_2 U_1^{-1} = I \implies U_2 = U_1 $$
+La fattorizzazione è unica.
+\end{proof}
+
+% lezione 5 novembre
+\subsubsection{Esistenza della Fattorizzazione LU}
+Per dimostrare costruttivamente l'esistenza della fattorizzazione, vediamo prima un problema preliminare. Supponiamo di avere un vettore $\mathbf{v} = (v_1, \dots, v_n)^T \in \mathbb{R}^n$. Vogliamo azzerare le sue componenti dalla $(k+1)$-esima in poi, mediante moltiplicazione a sinistra per una matrice $L$ che sia triangolare inferiore e a diagonale unitaria. Vogliamo cioè definire $L$ tale che:
+$$ L\mathbf{v} = \begin{pmatrix} v_1 \\ \vdots \\ v_k \\ 0 \\ \vdots \\ 0 \end{pmatrix} $$
+Se $v_k \neq 0$, possiamo definire il \textbf{vettore elementare di Gauss}:
+$$ \mathbf{g}_k = \frac{1}{v_k} ( \underbrace{0, \dots, 0}_{k \text{ zeri}}, v_{k+1}, \dots, v_n )^T \in \mathbb{R}^n $$
+Detto $\mathbf{e}_k$ il $k$-esimo versore, definiamo la \textbf{matrice elementare di Gauss}:
+$$ L_k = I - \mathbf{g}_k \mathbf{e}_k^T = 
+\begin{pmatrix}
+1 & & & & & & \\
+& \ddots & & & & & \\
+& & 1 & & & & \\
+& & & 1 & & & \\
+& & & -v_{k+1}/v_k & 1 & & \\
+& & & \vdots & & \ddots & \\
+& & & -v_n/v_k & & & 1
+\end{pmatrix} \leftarrow \text{riga } k
+$$
+Questa matrice è, per costruzione, triangolare inferiore a diagonale unitaria. Inoltre:
+\begin{align*}
+    L_k \mathbf{v} &= (I - \mathbf{g}_k \mathbf{e}_k^T) \mathbf{v} = \mathbf{v} - \mathbf{g}_k (\mathbf{e}_k^T \mathbf{v}) \\
+                   &= \mathbf{v} - \mathbf{g}_k (v_k) = \mathbf{v} - \frac{1}{v_k} \begin{pmatrix} 0 \\ \vdots \\ 0 \\ v_{k+1} \\ \vdots \\ v_n \end{pmatrix} \cdot v_k
+                   = \begin{pmatrix} v_1 \\ \vdots \\ v_k \\ v_{k+1} \\ \vdots \\ v_n \end{pmatrix} - 
+                     \begin{pmatrix} 0 \\ \vdots \\ 0 \\ v_{k+1} \\ \vdots \\ v_n \end{pmatrix}
+                   = \begin{pmatrix} v_1 \\ \vdots \\ v_k \\ 0 \\ \vdots \\ 0 \end{pmatrix}
+\end{align*}
+come richiesto.
+
+\begin{osservazione}
+L'inversa di una matrice elementare di Gauss è $L^{-1} = I + \mathbf{g}_k \mathbf{e}_k^T$.
+Infatti:
+$$ L^{-1} L = (I + \mathbf{g}_k \mathbf{e}_k^T) (I - \mathbf{g}_k \mathbf{e}_k^T) = I - \mathbf{g}_k \mathbf{e}_k^T + \mathbf{g}_k \mathbf{e}_k^T - \mathbf{g}_k (\mathbf{e}_k^T \mathbf{g}_k) \mathbf{e}_k^T = I $$
+poiché $\mathbf{e}_k^T \mathbf{g}_k = 0$ (la $k$-esima componente di $\mathbf{g}_k$ è zero per definizione).
+\end{osservazione}
+
+\subsubsection{Metodo di Eliminazione di Gauss (MEG)}
+Definiamo ora il metodo costruttivo per la fattorizzazione LU. È un metodo semi-iterativo che consta di $n-1$ passi (se $A \in \mathbb{R}^{n \times n}$). Al passo $j$, l'obiettivo è trasformare la $j$-esima colonna della matrice corrente, $A^{(j)}$, in quella di una matrice triangolare superiore, azzerando gli elementi sotto la diagonale.
+
+Sia $A = (a_{ij}) \equiv A^{(1)}$ la matrice da fattorizzare. L'apice $(k)$ denota l'ultimo passo in cui l'elemento $(i,j)$ è stato modificato.
+
+\paragraph{Passo 1:}
+Sia $A^{(1)} = \begin{pmatrix}
+a_{11}^{(1)} & a_{12}^{(1)} & \dots & a_{1n}^{(1)} \\
+a_{21}^{(1)} & a_{22}^{(1)} & \dots & a_{2n}^{(1)} \\
+\vdots & \vdots & \ddots & \vdots \\
+a_{n1}^{(1)} & a_{n2}^{(1)} & \dots & a_{nn}^{(1)}
+\end{pmatrix}$.
+Se $a_{11}^{(1)} \neq 0$, possiamo definire il primo vettore elementare di Gauss:
+$$ \mathbf{g}_1 = \frac{1}{a_{11}^{(1)}} (0, a_{21}^{(1)}, \dots, a_{n1}^{(1)})^T $$
+e la prima matrice elementare di Gauss $L_1 = I - \mathbf{g}_1 \mathbf{e}_1^T$.
+Applicandola ad $A^{(1)}$ otteniamo $A^{(2)}$:
+$$ L_1 A^{(1)} = A^{(2)} = \begin{pmatrix}
+a_{11}^{(1)} & a_{12}^{(1)} & \dots & a_{1n}^{(1)} \\
+0 & a_{22}^{(2)} & \dots & a_{2n}^{(2)} \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & a_{n2}^{(2)} & \dots & a_{nn}^{(2)}
+\end{pmatrix} $$
+
+\paragraph{Passo 2:}
+Se $a_{22}^{(2)} \neq 0$, definiamo il secondo vettore di Gauss:
+$$ \mathbf{g}_2 = \frac{1}{a_{22}^{(2)}} (0, 0, a_{32}^{(2)}, \dots, a_{n2}^{(2)})^T $$
+e la matrice $L_2 = I - \mathbf{g}_2 \mathbf{e}_2^T$. Otteniamo:
+$$ L_2 A^{(2)} = L_2 L_1 A^{(1)} = A^{(3)} = \begin{pmatrix}
+a_{11}^{(1)} & a_{12}^{(1)} & a_{13}^{(1)} & \dots & a_{1n}^{(1)} \\
+0 & a_{22}^{(2)} & a_{23}^{(2)} & \dots & a_{2n}^{(2)} \\
+0 & 0 & a_{33}^{(3)} & \dots & a_{3n}^{(3)} \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+0 & 0 & a_{n3}^{(3)} & \dots & a_{nn}^{(3)}
+\end{pmatrix} $$
+
+\paragraph{Passo $j$ generico:}
+Se $a_{jj}^{(j)} \neq 0$, definiamo $\mathbf{g}_j = \frac{1}{a_{jj}^{(j)}} (0, \dots, 0, a_{j+1,j}^{(j)}, \dots, a_{nj}^{(j)})^T$ e $L_j = I - \mathbf{g}_j \mathbf{e}_j^T$.
+Si ottiene $L_j....L_1A = A^{(j+1)}$.
+
+\paragraph{Fine del metodo (dopo $n-1$ passi):}
+Se la procedura è stata possibile per $j=1, \dots, n-1$ (cioè $a_{jj}^{(j)} \neq 0$ per ogni passo), si ottiene, infine, che:
+$$ L_{n-1} \dots L_2 L_1 A = A^{(n)} \equiv U $$
+dove $U$ è una matrice triangolare superiore.
+Possiamo quindi concludere che questa procedura è definita se e solo se $a_{jj}^{(j)} \neq 0$ per $j=1, \dots, n-1$, ovvero se e solo se $U$ è nonsingolare.
+
+Dall'uguaglianza $L_{n-1} \dots L_1 A = U$, si ottiene la fattorizzazione osservando che:
+\begin{enumerate}
+    \item Ogni $L_i$ è triangolare inferiore a diagonale unitaria;
+    \item Ogni $L_i^{-1}$ è triangolare inferiore a diagonale unitaria (come visto in precedenza);
+    \item Il prodotto di matrici triangolari inferiori a diagonale unitaria è una matrice triangolare inferiore a diagonale unitaria (dall'esercizio sulle proprietà).
+\end{enumerate}
+Si ottiene che possiamo porre:
+$$ L_{n-1} \dots L_1 = L^{-1} $$
+con $L = (L_{n-1} \dots L_1)^{-1} = L_1^{-1} \dots L_{n-1}^{-1}$, che è anch'essa triangolare inferiore a diagonale unitaria.
+Da questo si ottiene:
+$$ L^{-1} A = U $$
+ovvero:
+$$ A = L U $$
+che è la fattorizzazione richiesta.
+
+
+%lezione del 11 novembre
+
+\subsection{Algoritmo di fattorizzazione LU di Gauss}
+Dato $A=(a_{ij}) \in \mathbb{R}^{n \times n}$ con $\det(A) \neq 0$.
+L'algoritmo di eliminazione di Gauss consiste in una procedura semi-iterativa di $n-1$ passi, in cui al passo $i$-esimo si azzerano selettivamente gli elementi al di sotto di quello diagonale, in colonna $i$.
+Un generico elemento è denotato con $a_{ij}^{(k)}$, dove $k$ denota l'ultimo passo in cui l'elemento $(i,j)$ è stato modificato.
+
+Avevamo visto che se $\forall i=1, \dots, n-1 : a_{ii}^{(i)} \neq 0$, allora è definito l'i-esimo vettore elementare di Gauss,
+$$ \mathbf{g}_i = \frac{1}{a_{ii}^{(i)}} (0, \dots, 0, a_{i+1,i}^{(i)}, \dots, a_{ni}^{(i)})^T $$
+e la matrice elementare di Gauss
+$$ L_i = I - \mathbf{g}_i \mathbf{e}_i^T $$
+tali che $L_{n-1} \dots L_1 A = A^{(n)} = U$, e da cui si ricava $A = L U$.
+
+Esaminiamo in primis gli aspetti del costo computazionale, supponendo che la fattorizzazione esista.
+
+\subsubsection{Costo Computazionale}
+
+\paragraph{Memoria}
+L'idea è quella di sovrascrivere la matrice $A$ con l'informazione dei suoi fattori $L$ e $U$.
+\begin{itemize}
+    \item La parte triangolare superiore di $U$ (che è $A^{(n)}$) può essere sovrascritta sulla porzione triangolare superiore di $A$.
+    \item Riguardo al fattore $L$, ricordiamo che $L = L_1^{-1} \dots L_{n-1}^{-1}$ e $L_i^{-1} = I + \mathbf{g}_i \mathbf{e}_i^T$.
+    \item Poiché le prime $i$ componenti di $\mathbf{g}_i$ sono nulle, si ha $\mathbf{e}_j^T \mathbf{g}_i = 0$ per $j \le i$.
+\end{itemize}
+Consideriamo il prodotto $L = (I + \mathbf{g}_1 \mathbf{e}_1^T) (I + \mathbf{g}_2 \mathbf{e}_2^T) \dots (I + \mathbf{g}_{n-1} \mathbf{e}_{n-1}^T)$.
+Per $n=3$, $L = (I + \mathbf{g}_1 \mathbf{e}_1^T) (I + \mathbf{g}_2 \mathbf{e}_2^T) = I + \mathbf{g}_1 \mathbf{e}_1^T + \mathbf{g}_2 \mathbf{e}_2^T + \mathbf{g}_1 (\mathbf{e}_1^T \mathbf{g}_2) \mathbf{e}_2^T$.
+Ma $\mathbf{e}_1^T \mathbf{g}_2 = 0$ (poiché la prima componente di $\mathbf{g}_2$ è 0).
+Questa proprietà vale in generale, quindi il prodotto si semplifica:
+\begin{equation}
+    L = I + \sum_{i=1}^{n-1} \mathbf{g}_i \mathbf{e}_i^T 
+\end{equation}
+Pertanto, al passo $i$-esimo della fattorizzazione possiamo riscrivere gli $(n-i)$ elementi, al di sotto di quello diagonale, in colonna $i$, con gli elementi significativi di $\mathbf{g}_i$.
+Di conseguenza, alla fine dell'algoritmo, avremo riscritto gli elementi della porzione strettamente triangolare inferiore di $A$, con la porzione strettamente triangolare inferiore di $L$.
+Evidentemente, la diagonale di $L$, che sappiamo a priori essere unitaria, non necessita di essere memorizzata esplicitamente.
+
+In conclusione, la matrice $A$ può essere sovrascritta con l'informazione dei suoi fattori $L$ e $U$.
+\paragraph{Numero di Operazioni (Flops)}
+L'operazione $A^{(i+1)} = L_i A^{(i)}$ equivale a:
+$$ A^{(i+1)} = (I - \mathbf{g}_i \mathbf{e}_i^T) A^{(i)} = A^{(i)} - \mathbf{g}_i (\mathbf{e}_i^T A^{(i)}) $$
+Questa operazione aggiorna solo la sottomatrice $(n-i) \times (n-i)$ in basso a destra.
+Lo pseudo-codice (supponendo $A$ $n \times n$) è:
+
+\begin{lstlisting}[language=matlab]
+% Algoritmo di Fattorizzazione LU (sovrascrive A)
+for i = 1:n-1
+    % passi di eliminazione
+    if A(i,i) == 0
+        error('A non fattorizzabile'); 
+    end
+    
+    % Calcolo dei moltiplicatori (vettore g_i)
+    % e memorizzazione in A
+    A(i+1:n, i) = A(i+1:n, i) / A(i,i);
+    
+    % Aggiornamento della sottomatrice (operazione rank-1)
+    A(i+1:n, i+1:n) = A(i+1:n, i+1:n) - ...
+                       A(i+1:n, i) * A(i, i+1:n);
+end
+\end{lstlisting}
+
+Analizziamo le operazioni all'iterazione $i$:
+\begin{itemize}
+    \item $(n-i)$ divisioni (per calcolare $\mathbf{g}_i$).
+    \item $2(n-i)^2$ flops per l'aggiornamento della sottomatrice (un prodotto esterno $A(i+1:n, i) * A(i, i+1:n)$ che costa $(n-i)^2$ moltiplicazioni, e una sottrazione matriciale che costa $(n-i)^2$ sottrazioni).
+\end{itemize}
+Il costo totale è dominato dagli aggiornamenti:
+$$ \sum_{i=1}^{n-1} 2(n-i)^2 = 2 \sum_{j=1}^{n-1} j^2 \approx 2 \int_1^{n-1} x^2 dx \approx \frac{2(n-1)^3}{3} \approx \frac{2n^3}{3} \text{ flops} $$
+(Usando $\sum_{i=1}^{n} i^k \approx \int_1^n x^k dx \approx \frac{n^{k+1}}{k+1}$).
+
+\subsubsection{Teorema di Esistenza della Fattorizzazione LU}
+La fattorizzazione $A=LU$ (tramite MEG) esiste se e solo se $a_{ii}^{(i)} \neq 0$ per $i=1, \dots, n-1$, che (essendo $A$ nonsingolare) equivale a $\det(U) \neq 0$.
+
+Denotiamo con $A_k \in \mathbb{R}^{k \times k}$ la \textbf{sottomatrice principale di ordine $k$} di $A$, ottenuta come intersezione delle sue prime $k$ righe e $k$ colonne.
+(Es. $A_1 = (a_{11})$, $A_2 = \begin{pmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \end{pmatrix}$, $A_n = A$).
+
+\begin{osservazione}
+Questa sottomatrice può essere estratta usando la moltiplicazione a blocchi. Se $L$ e $U$ sono partizionate come segue (dove $L_k$ e $U_k$ sono le sottomatrici principali di ordine $k$):
+$$ L = \begin{pmatrix} L_k & O \\ \dots & \dots \end{pmatrix} \quad \text{e} \quad U = \begin{pmatrix} U_k & \dots \\ O & \dots \end{pmatrix} $$
+allora:
+\begin{align*}
+    A_k &= \begin{bmatrix} I_k & O_{k, n-k} \end{bmatrix} A \begin{bmatrix} I_k \\ O_{n-k, k} \end{bmatrix} \\
+        &= \left( \begin{bmatrix} I_k & O_{k, n-k} \end{bmatrix} L \right) \left( U \begin{bmatrix} I_k \\ O_{n-k, k} \end{bmatrix} \right) \\
+        &= \begin{bmatrix} L_k & O_{k, n-k} \end{bmatrix} \begin{bmatrix} U_k \\ O_{n-k, k} \end{bmatrix} = L_k U_k
+\end{align*}
+\end{osservazione}
+Definiamo \textbf{minore principale} di ordine $k$ il $\det(A_k)$, cioè il determinante della sottomatrice principale di ordine k.
+Segue che:
+\begin{align*}
+    \det(A_k) &= \det(L_k U_k) \\
+              &= \underbrace{\det(L_k)}_{=1} \cdot \det(U_k) \quad \text{(perché L è a diagonale unitaria)} \\
+              &= \det(U_k) = \prod_{i=1}^k u_{ii} = \prod_{i=1}^k a_{ii}^{(i)}, \quad \forall k=1, \dots, n
+\end{align*}
+A questo punto, osserviamo che la condizione $\det(U) \neq 0$ (necessaria per l'esistenza del MEG) è equivalente a:
+\begin{align*}
+    \det(U) = \prod_{i=1}^n a_{ii}^{(i)} \neq 0 \quad &\Leftrightarrow \quad \forall k=1, \dots, n: \prod_{i=1}^k a_{ii}^{(i)} \neq 0 \\
+    &\Leftrightarrow \quad \forall k=1, \dots, n: \det(U_k) \neq 0 \\
+    &\Leftrightarrow \quad \forall k=1, \dots, n: \det(A_k) \neq 0
+\end{align*}
+In altri termini, abbiamo dimostrato il seguente risultato.
+
+\begin{teorema}[Esistenza della Fattorizzazione LU]
+Data una matrice nonsingolare $A$, $A$ è fattorizzabile LU (nella forma $A=LU$ con $L$ unitaria) se e solo se tutti i suoi minori principali sono non nulli.
+\end{teorema}
+
+\begin{osservazione}
+Affinché il sistema $A\mathbf{x} = \mathbf{b}$ ($A \in \mathbb{R}^{n \times n}$) abbia soluzione unica, è necessario e sufficiente che $\det(A) = \det(A_n) \neq 0$.
+Tuttavia, se vogliamo fattorizzare $A=LU$ per risolverlo, si richiede la condizione (generalmente molto più restrittiva) che $\det(A_k) \neq 0$ per ogni $k=1, \dots, n$.
+
+Esistono importanti classi di matrici per cui questa condizione è sempre verificata:
+\begin{enumerate}
+    \item La nonsingolarità di $A$ deriva da una proprietà strutturale della matrice.
+    \item Tutte le sottomatrici principali di $A$ godono della medesima proprietà .
+\end{enumerate}
+Questo avviene per le matrici a \textbf{diagonale dominante} e per le matrici \textbf{simmetriche e definite positive}.
+\end{osservazione}
+
+%lezione del 12 novembre
+\subsubsection{Matrici a Diagonale Dominante}
+\begin{definition}
+    Una matrice $A=(a_{ij}) \in \mathbb{R}^{n \times n}$ si dice a \textbf{diagonale dominante}:
+    \begin{itemize}
+        \item \textbf{per righe} se, per ogni riga, il valore assoluto dell'elemento sulla diagonale principale è strettamente maggiore della somma dei valori assoluti di tutti gli altri elementi su quella riga.
+        \[ |a_{ii}| > \sum_{j \neq i} |a_{ij}|, \quad \forall i=1, \dots, n \]
+        \textbf{Esempio:}
+        \[ A = \begin{pmatrix} -3 & 2 & 0 \\ 4 & -7 & 1 \\ 1 & -5 & 8 \end{pmatrix} \]
+        
+        \item \textbf{per colonne} se, per ogni colonna, il valore assoluto dell'elemento sulla diagonale principale è strettamente maggiore della somma dei valori assoluti di tutti gli altri elementi in quella colonna.
+        \[ |a_{ii}| > \sum_{j \neq i} |a_{ji}|, \quad \forall i=1, \dots, n \]
+        \textbf{Esempio:}
+        \[ A = \begin{pmatrix} 2 & 8 & 7 \\ 1 & -9 & 0 \\ 0 & 0 & 8 \end{pmatrix} \]
+       
+    \end{itemize}
+    \end{definition}
+
+\paragraph{Proprietà:}
+\begin{enumerate}
+    \item $A$ è d.d. per righe $\iff A^T$ è d.d. per colonne.
+    \item Se $A$ è d.d. (per righe o per colonne), allora $\forall k=1, \dots, n$, la sottomatrice principale $A_k$ è d.d. (per righe o per colonne).
+    \item Se $A$ è d.d. (per righe o per colonne), allora $\det(A) \neq 0$ (A è nonsingolare).
+\end{enumerate}
+
+Dalle proprietà 2) e 3) segue immediatamente il seguente teorema:
+\begin{teorema}
+Se $A$ è a diagonale dominante (per righe o per colonne), allora $A$ è fattorizzabile $LU$.
+\end{teorema}
+\begin{proof}[Dimostrazione (Proprietà 3)]
+Poiché $\det(A) = \det(A^T)$ (e per la Prop. 1), possiamo considerare solo il caso in cui $A$ è d.d. per righe. Supponiamo per assurdo che $\det(A)=0$. Ma allora $\exists \mathbf{x} \in \mathbb{R}^n, \mathbf{x} \neq \mathbf{0}$ tale che $A\mathbf{x} = \mathbf{0}$.
+Poiché $A(\alpha \mathbf{x}) = \mathbf{0}$ per ogni scalare $\alpha$, possiamo scegliere $\mathbf{x}$ normalizzato in modo che la sua componente di modulo massimo sia 1:
+$$ x_k : |x_k| = \max_{i=1,\dots,n} |x_i| = 1 \implies |x_j| \le 1, \forall j $$
+Consideriamo la $k$-esima equazione del sistema $A\mathbf{x} = \mathbf{0}$:
+$$ (\mathbf{e}_k^T A) \mathbf{x} = 0 \implies \sum_{j=1}^n a_{kj} x_j = 0 $$
+Isoliamo il termine diagonale: $a_{kk} x_k = - \sum_{j \neq k} a_{kj} x_j$. Passando ai moduli e usando $x_k=1$:
+$$ |a_{kk}| = |a_{kk} \cdot 1| = \left| - \sum_{j \neq k} a_{kj} x_j \right| = \left| \sum_{j \neq k} a_{kj} x_j \right| \le \sum_{j \neq k} |a_{kj}| |x_j| $$
+Poiché $|x_j| \le 1$ per ogni $j$:
+$$ |a_{kk}| \le \sum_{j \neq k} |a_{kj}| \cdot 1 = \sum_{j \neq k} |a_{kj}| $$
+Questo contraddice l'ipotesi che $A$ sia a diagonale dominante per righe (in particolare sulla riga $k$-esima: $|a_{kk}| > \sum_{j \neq k} |a_{kj}|$). Pertanto, deve aversi $\det(A) \neq 0$.
+\end{proof}
+
+\subsubsection{Matrici Simmetriche e Definite Positive (sdp)}
+\begin{definition}
+Diremo che $A=(a_{ij}) \in \mathbb{R}^{n \times n}$ è \textbf{sdp} se:
+\begin{enumerate}
+    \item $A = A^T$ (simmetria, ovvero $a_{ij} = a_{ji}$);
+    \item $\forall \mathbf{x} \in \mathbb{R}^n, \mathbf{x} \neq \mathbf{0} : \mathbf{x}^T A \mathbf{x} > 0$ (definita positività).
+\end{enumerate}
+\end{definition}
+
+\paragraph{Proprietà:}
+\begin{enumerate}
+    \item $A \text{ sdp} \implies \forall k=1, \dots, n : A_k \text{ è sdp}$.
+    \item $A \text{ sdp} \implies \det(A) \neq 0$.
+    \item Dalle 1) e 2) segue che: $A \text{ sdp} \implies A = LU$.
+\end{enumerate}
+
+\begin{proof}[Dimostrazione (Proprietà 2)]
+Supponiamo per assurdo $\det(A)=0$. Allora $\exists \mathbf{x} \neq \mathbf{0}$ tale che $A\mathbf{x} = \mathbf{0}$. Ma allora $\mathbf{x}^T A \mathbf{x} = \mathbf{x}^T \mathbf{0} = 0$, il che contraddice l'ipotesi che $A$ sia definita positiva. Pertanto $\det(A) \neq 0$.
+\end{proof}
+
+\begin{proof}[Dimostrazione (Proprietà 1)]
+Per un generico $k$, partizioniamo $A$ a blocchi: $A = \begin{pmatrix} A_k & B \\ C & D \end{pmatrix}$.
+Dalla simmetria $A=A^T$, si ha $\begin{pmatrix} A_k & B \\ C & D \end{pmatrix} = \begin{pmatrix} A_k^T & C^T \\ B^T & D^T \end{pmatrix}$. Uguagliando i blocchi omologhi: $A_k = A_k^T$ (quindi $A_k$ è simmetrica).
+Rimane da dimostrare che $A_k$ è definita positiva. Scegliamo un generico $\mathbf{y} \in \mathbb{R}^k, \mathbf{y} \neq \mathbf{0}$. Costruiamo $\mathbf{x} = \begin{pmatrix} \mathbf{y} \\ \mathbf{0} \end{pmatrix} \in \mathbb{R}^n$. Chiaramente $\mathbf{x} \neq \mathbf{0}$.
+Calcoliamo:
+$$ 0 < \mathbf{x}^T A \mathbf{x} = \begin{pmatrix} \mathbf{y}^T & \mathbf{0}^T \end{pmatrix} \begin{pmatrix} A_k & C^T \\ C & D \end{pmatrix} \begin{pmatrix} \mathbf{y} \\ \mathbf{0} \end{pmatrix} = \begin{pmatrix} \mathbf{y}^T A_k & \mathbf{y}^T C^T \end{pmatrix} \begin{pmatrix} \mathbf{y} \\ \mathbf{0} \end{pmatrix} = \mathbf{y}^T A_k \mathbf{y} $$
+Quindi $\mathbf{y}^T A_k \mathbf{y} > 0$, e $A_k$ è definita positiva.
+\end{proof}
+
+\paragraph{Ulteriori Proprietà delle Matrici sdp}
+
+\begin{teorema}
+Se $A=(a_{ij})$ è sdp $\implies \forall i=1, \dots, n: a_{ii} > 0$.
+\end{teorema}
+\begin{proof}
+Infatti, $\forall i=1, \dots, n$, sia $\mathbf{e}_i$ l'$i$-esimo versore ($\mathbf{e}_i \neq \mathbf{0}$). Allora:
+$$ a_{ii} = \mathbf{e}_i^T A \mathbf{e}_i > 0 \quad (\text{per la definizione di sdp}) $$
+\end{proof}
+
+\begin{teorema}[Fattorizzazione $LDL^T$]
+$A$ è sdp $\iff \exists L$ triangolare inferiore a diagonale unitaria, e $D = \text{diag}(d_1, \dots, d_n)$ matrice diagonale con $d_i > 0$ per $i=1, \dots, n$, tali che:
+$$ A = L D L^T $$
+\end{teorema}
+\begin{proof}
+($\Leftarrow$) Dimostriamo che se $A=LDL^T$ con $L$ unitaria e $D$ positiva, allora $A$ è sdp.
+1) Simmetria: $A^T = (LDL^T)^T = (L^T)^T D^T L^T = L D L^T = A$.
+2) Def. Positività: $\forall \mathbf{x} \neq \mathbf{0}$, sia $\mathbf{y} = L^T \mathbf{x}$. Poiché $L^T$ è nonsingolare, $\mathbf{x} \neq \mathbf{0} \implies \mathbf{y} \neq \mathbf{0}$.
+$$ \mathbf{x}^T A \mathbf{x} = \mathbf{x}^T (L D L^T) \mathbf{x} = (\mathbf{x}^T L) D (L^T \mathbf{x}) = \mathbf{y}^T D \mathbf{y} = \sum_{i=1}^n d_i y_i^2 > 0 $$
+(poiché $d_i > 0$ e almeno uno $y_i \neq 0$).
+
+($\Rightarrow$) Dimostriamo $A \text{ sdp} \implies A=LDL^T$, con $L$ e $D$ come nell'enunciato.
+Abbiamo visto che se $A$ è sdp, allora $A=LU$, con $L$ triangolare inferiore a diagonale unitaria e $U$ triangolare superiore (e nonsingolare).
+Osserviamo che, se $U=(u_{ij}) \in \mathbb{R}^{n \times n}$, allora $U$ può essere fattorizzata come:
+$$ U = D \hat{U} $$
+con $D = \text{diag}(u_{11}, \dots, u_{nn})$. Ne consegue che $\hat{U}$ sarà triangolare superiore a diagonale unitaria.
+
+\begin{esempio}
+\[ U = \begin{pmatrix} 1 & 2 & 3 \\ 0 & 4 & 5 \\ 0 & 0 & 6 \end{pmatrix} = 
+\underbrace{\begin{pmatrix} 1 & 0 & 0 \\ 0 & 4 & 0 \\ 0 & 0 & 6 \end{pmatrix}}_{D}
+\underbrace{\begin{pmatrix} 1 & 2 & 3 \\ 0 & 1 & 5/4 \\ 0 & 0 & 1 \end{pmatrix}}_{\hat{U}}
+\]
+\end{esempio}
+
+Pertanto, $A = LU = L D \hat{U}$.
+Poiché $A$ è sdp, $A = A^T$. Calcoliamo $A^T$:
+$$ A^T = (L D \hat{U})^T = \hat{U}^T D^T L^T = \hat{U}^T (D L^T) \quad (\text{poiché } D \text{ è diagonale, } D^T=D) $$
+A questo punto, osserviamo che:
+\begin{enumerate}
+    \item $\hat{U}^T$ è triangolare inferiore a diagonale unitaria.
+    \item $D L^T$ è triangolare superiore.
+    \item La fattorizzazione LU (con $L$ unitaria) è unica.
+\end{enumerate}
+Confrontando le due fattorizzazioni di $A$, $A = L (D \hat{U})$ e $A = \hat{U}^T (D L^T)$, per l'unicità concludiamo che:
+$$ \hat{U}^T = L \quad \land \quad D L^T = U $$
+Quindi, $A = L D L^T$.
+
+Rimane, quindi, da dimostrare che gli elementi diagonali $d_i$ di $D$ sono positivi.
+A questo fine, osserviamo che $\forall i=1, \dots, n$, poiché $L^T$ è nonsingolare (essendo triangolare superiore con diagonale unitaria), esiste un unico $\mathbf{x} \neq \mathbf{0}$ tale che $L^T \mathbf{x} = \mathbf{e}_i$.
+Pertanto:
+\begin{align*}
+    0 &< \mathbf{x}^T A \mathbf{x} \quad (\text{perché } A \text{ è sdp e } \mathbf{x} \neq \mathbf{0}) \\
+      &= \mathbf{x}^T L D L^T \mathbf{x} \\
+      &= (L^T \mathbf{x})^T D (L^T \mathbf{x}) \\
+      &= \mathbf{e}_i^T D \mathbf{e}_i = d_i
+\end{align*}
+Poiché $i$ è generico, l'asserto segue.
+\end{proof}
+
+\begin{osservazione}
+Se $A$ è sdp, e quindi $A=LDL^T$, il fattore $U$ non è più da calcolare.
+\end{osservazione}
