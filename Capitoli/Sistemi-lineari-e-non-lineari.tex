@@ -776,3 +776,534 @@ Poiché $i$ è generico, l'asserto segue.
 \begin{osservazione}
 Se $A$ è sdp, e quindi $A=LDL^T$, il fattore $U$ non è più da calcolare.
 \end{osservazione}
+
+
+%lezione 18 novembre
+\subsection{Casi particolari di Fattorizzazione LU}
+Data $A \in \mathbb{R}^{n \times n}$ con $\det(A) \neq 0$.
+Allora $A=LU \iff \det(A_k) \neq 0, \forall k=1, \dots, n$.
+Classi di matrici per cui questo è sempre vero:
+\begin{itemize}
+    \item A è a diagonale dominante;
+    \item A è simmetrica e definita positiva (sdp).
+\end{itemize}
+In particolare:
+$$ A \text{ sdp} \iff \exists L=(l_{ij}) \text{ triang. inf. unitaria}, D=\text{diag}(d_1, \dots, d_n) \text{ con } d_i>0 \text{ t.c. } A = LDL^T $$
+
+\subsubsection{Algoritmo di fattorizzazione $LDL^T$ per matrici sdp}
+Se $A$ è sdp, allora $A=A^T$ e quindi abbiamo necessità di specificare solo una porzione triangolare. Nel seguito, considereremo la parte triangolare inferiore di $A$. Ovvero, se $A=(a_{ij})$, considereremo solo gli elementi con $i \ge j$.
+
+Per ottenere l'algoritmo di fattorizzazione, imponiamo che $\forall j=1, \dots, n$, $i \ge j$, si abbia $a_{ij} = (LDL^T)_{ij}$.
+Ricordiamo che se $\mathbf{e}_i$ è l'$i$-esimo versore:
+\begin{align*}
+    a_{ij} &= \mathbf{e}_i^T A \mathbf{e}_j = \mathbf{e}_i^T L D L^T \mathbf{e}_j \\
+           &= (\mathbf{e}_i^T L) D (\mathbf{e}_j^T L)^T \\
+           &= \begin{pmatrix} l_{i1} & l_{i2} & \dots & l_{ii} & 0 & \dots \end{pmatrix} 
+              \begin{pmatrix} d_1 & & \\ & \ddots & \\ & & d_n \end{pmatrix}
+              \begin{pmatrix} l_{j1} \\ \dots \\ l_{jj} \\ 0 \\ \vdots \end{pmatrix} \\
+           &= \sum_{k=1}^{\min(i,j)=j} l_{ik} d_k l_{jk} = \sum_{k=1}^j l_{ik} l_{jk} d_k
+\end{align*}
+(dato che $L$ è triangolare inferiore).
+
+Abbiamo quindi concluso che per $j=1,\dots,n$ e $i \ge j$:
+$$ a_{ij} = \sum_{k=1}^j l_{ik} l_{jk} d_k = \sum_{k=1}^{j-1} l_{ik} l_{jk} d_k + l_{ij} \underbrace{l_{jj}}_{=1} d_j $$
+Distinguiamo i casi per la diagonale e fuori diagonale:
+\begin{itemize}
+    \item $i=j$: $a_{jj} = \sum_{k=1}^{j-1} l_{jk}^2 d_k + d_j \implies d_j = a_{jj} - \sum_{k=1}^{j-1} l_{jk}^2 d_k = v_j$
+    \item $i > j$: $a_{ij} = \sum_{k=1}^{j-1} l_{ik} l_{jk} d_k + l_{ij} d_j \implies l_{ij} = \frac{a_{ij} - \sum_{k=1}^{j-1} l_{ik} l_{jk} d_k}{d_j}$
+\end{itemize}
+
+L'algoritmo risultante (accesso per colonne):
+\[
+\begin{array}{l}
+    \textbf{for } j = 1:n \\
+    \quad d_j = a_{jj} - \sum_{k=1}^{j-1} l_{jk} \, \overbrace{\colorbox{yellow!50}{$l_{jk} d_k$}}^{\color{red}=v_k} \\
+    \\
+    \quad \textbf{for } i = j+1:n \\
+    \qquad l_{ij} = \dfrac{a_{ij} - \sum_{k=1}^{j-1} l_{ik} \, \overbrace{\colorbox{yellow!50}{$l_{jk} d_k$}}^{\color{red}=v_k}}{d_j} \\
+    \quad \textbf{end} \\
+    \textbf{end}
+\end{array}
+\]
+
+Utilizzando un vettore di appoggio $\mathbf{v}$ di dimensione al più $n-1$, si verificano che le operazioni richieste sono $\approx \frac{1}{3}n^3$ (metà rispetto a LU).
+
+\paragraph{Occupazione di Memoria}
+Gli elementi della porzione triangolare inferiore di $A$ possono essere sovrascritti con gli elementi significativi dei fattori $L$ e $D$:
+$$
+A = \begin{pmatrix}
+a_{11} & & & \\
+a_{21} & a_{22} & & \\
+\vdots & \dots & \ddots & \\
+a_{n1} & \dots & \dots & a_{nn}
+\end{pmatrix} 
+\xrightarrow{\text{sovrascrittura}} 
+\begin{pmatrix}
+d_1 & & & \\
+l_{21} & d_2 & & \\
+l_{31} & l_{32} & d_3 & \\
+\vdots & \dots & \dots & d_n
+\end{pmatrix}
+$$
+
+
+\subsection{Funzioni Matlab per la Risoluzione di Sistemi}
+
+\subsubsection{Risoluzione con Fattorizzazione LU}
+Scriviamo una function che, dato in ingresso la matrice `LU` (che contiene i fattori $L$ e $U$ sovrascritti su $A$) e il termine noto `b`, risolve il sistema $A\mathbf{x} = \mathbf{b}$.
+Ricordiamo che $A=LU$, quindi risolviamo $L\mathbf{y}=\mathbf{b}$ e poi $U\mathbf{x}=\mathbf{y}$.
+
+\begin{lstlisting}
+function x = LUsolve(LU, b)
+% x = LUsolve(LU, b)
+% Risolve il sistema lineare per i fattori L ed U della matrice 
+% dei coefficienti.
+%
+% Input:
+%   LU - matrice con i fattori L ed U (L triang. inf unitaria, U triang. sup);
+%   b  - termine noto;
+%
+% Output:
+%   x  - soluzione.
+%
+% Rel. 2025-12-18.
+
+if nargin < 2, error('dati insufficienti'), end
+[m, n] = size(LU);
+if m ~= n || length(b) ~= n
+    error('dimensione dati inconsistenti')
+end
+
+x = b(:); % Inizializzazione (x <- b)
+
+% Risoluzione Ly = b (Sostituzione in avanti)
+for i = 2:n % fattore L
+    x(i:n) = x(i:n) - LU(i:n, i-1) * x(i-1); 
+end
+
+% Risoluzione Ux = y (Sostituzione all'indietro)
+for i = n:-1:1 %fattore U
+    if LU(i,i) == 0
+        error('fattore U singolare')
+    end
+    x(i) = x(i) / LU(i,i); 
+
+    x(1:i-1) = x(1:i-1) - LU(1:i-1, i) * x(i); 
+end
+
+return
+\end{lstlisting}
+\vspace{0.3 cm}
+\subsubsection{Risoluzione con Fattorizzazione $LDL^T$}
+Scrivere una function che, avendo in ingresso la matrice LD con l'informazione della fattorizzazione $LDL^T$ di una matrice sdp A, nella porzione triangolare inferiore, risolva il sistema $A\mathbf{x} = \mathbf{b}$.
+Dobbiamo risolvere:
+1. $L \mathbf{y} = \mathbf{b}$
+2. $D \mathbf{z} = \mathbf{y}$
+3. $L^T \mathbf{x} = \mathbf{z}$
+
+\begin{lstlisting}
+function x = LDsolve(LD, b)
+% x = LDsolve(LD, b)
+% Risolve il sistema lineare per i fattori L, D, L' di una matrice sdp.
+%
+% Input:
+%   LD - matrice con l'informazione dei fattori L e D
+%        (D sulla diagonale, L nella parte strettamente inf.);
+%   b  - termine noto;
+%
+% Output:
+%   x  - soluzione.
+%
+% Rel. 2025-11-18.
+
+if nargin < 2, error('dati insufficienti'), end
+[m, n] = size(LD);
+if m ~= n || length(b) ~= n
+    error('dati non compatibili')
+end
+
+x = b(:);
+d = diag(LD); % Estrae la diagonale D
+if any(d <= 0), error('D non positiva'), end
+
+% 1. Risoluzione Ly = b (Sostituzione in avanti per colonne)
+% L è strettamente triangolare inferiore in LD
+for i = 2:n
+    % L(i:n, i-1) è la colonna i-1 di L
+    x(i:n) = x(i:n) - LD(i:n, i-1) * x(i-1); % axpy
+end
+
+% 2. Risoluzione Dz = y (Sistema diagonale)
+x = x ./ d; % fattore D
+
+% 3. Risoluzione L'x = z (Sostituzione all'indietro).
+for i = n-1:-1:1
+    x(i) = x(i) - LD(i+1:n, i)' * x(i+1:n); % prodotto scalare (negli appunti del prof c'è LD(i+1:n, i+1)' ma dovrebbe essere più corretto così)
+    % Nota: qui usiamo un prodotto scalare, ma l'accesso a LD è
+    % sempre per colonne (LD(..., i)).
+end
+
+return
+\end{lstlisting}
+
+%Lezione 19 novembre
+\subsection{Esempio di sistema mal condizionato e stabilità}
+% Leggere Appendice A1
+
+Consideriamo un esempio di sistema lineare $8 \times 8$ per illustrare il problema del mal condizionamento e la necessità del pivoting.
+
+Sia dato il sistema (1):
+$$
+\begin{cases}
+\epsilon x_1 + 9x_2 + x_3 + x_4 + x_5 + x_6 + x_7 + x_8 = (15+\epsilon)\pi \\
+9x_1 + x_2 + x_3 + x_4 + x_5 + x_6 + x_7 + x_8 = 16\pi \\
+x_1 + x_2 + 9x_3 + x_4 + x_5 + x_6 + x_7 + x_8 = 16\pi \\
+\vdots \\
+x_1 + x_2 + x_3 + x_4 + x_5 + x_6 + x_7 + 9x_8 = 16\pi
+\end{cases}
+$$
+La soluzione esatta è $\mathbf{x} = \pi(1, 1, \dots, 1)^T$.
+In forma matriciale $A\mathbf{x} = \mathbf{b}$, con:
+\[
+A = 
+\begin{bmatrix}
+\colorbox{green!30}{$\epsilon$} & \colorbox{yellow!50}{9} & 1 & 1 & 1 & 1 & 1 & 1 \\
+\colorbox{yellow!50}{9} & 1 & 1 & 1 & 1 & 1 & 1 & 1 \\
+1 & 1 & \colorbox{yellow!50}{9} & 1 & 1 & 1 & 1 & 1 \\
+1 & 1 & 1 & \colorbox{yellow!50}{9} & 1 & 1 & 1 & 1 \\
+1 & 1 & 1 & 1 & \colorbox{yellow!50}{9} & 1 & 1 & 1 \\
+1 & 1 & 1 & 1 & 1 & \colorbox{yellow!50}{9} & 1 & 1 \\
+1 & 1 & 1 & 1 & 1 & 1 & \colorbox{yellow!50}{9} & 1 \\
+1 & 1 & 1 & 1 & 1 & 1 & 1 & \colorbox{yellow!50}{9}
+\end{bmatrix}
+, \quad
+\mathbf{b} = \pi
+\begin{bmatrix}
+15+\colorbox{green!30}{$\epsilon$} \\
+16 \\
+16 \\
+\vdots \\
+\vdots \\
+\vdots \\
+16
+\end{bmatrix}.
+\]
+
+Consideriamo ora il sistema (2), che equivale invece ad $\hat{A}\mathbf{x} = \mathbf{\hat{b}}$, con
+
+\[
+\hat{A} = 
+\begin{bmatrix}
+\colorbox{yellow!50}{9} & 1 & 1 & 1 & 1 & 1 & 1 & 1 \\
+\colorbox{green!30}{$\epsilon$} & \colorbox{yellow!50}{9} & 1 & 1 & 1 & 1 & 1 & 1 \\
+1 & 1 & \colorbox{yellow!50}{9} & 1 & 1 & 1 & 1 & 1 \\
+1 & 1 & 1 & \colorbox{yellow!50}{9} & 1 & 1 & 1 & 1 \\
+1 & 1 & 1 & 1 & \colorbox{yellow!50}{9} & 1 & 1 & 1 \\
+1 & 1 & 1 & 1 & 1 & \colorbox{yellow!50}{9} & 1 & 1 \\
+1 & 1 & 1 & 1 & 1 & 1 & \colorbox{yellow!50}{9} & 1 \\
+1 & 1 & 1 & 1 & 1 & 1 & 1 & \colorbox{yellow!50}{9}
+\end{bmatrix}
+, \quad
+\mathbf{\hat{b}} = \pi
+\begin{bmatrix}
+16 \\
+15+\epsilon \\
+16 \\
+\vdots \\
+\vdots \\
+\vdots \\
+16
+\end{bmatrix}.
+\]
+I due sistemi sono matematicamente equivalenti. Per $\epsilon = 10^{-15}$, sia $A$ che $\hat{A}$ sono fattorizzabili LU (tutti i minori principali sono non nulli). Tuttavia, numericamente il comportamento è molto diverso.
+
+\subsection{Codice Matlab per il test}
+Ecco il codice per testare la fattorizzazione LU sui due sistemi.
+
+\begin{lstlisting}[language=Matlab]
+    function [x,LU1,x1,LU2,x2] = testlu(n)
+    %
+    % [x,LU1,x1,LU2,x2] = testlu(n)
+    %
+    %                           test fattorizzazione LU
+    %
+    %                               Rel. 2025-11-18
+    
+    A       = n*eye(n)+ones(n);
+    A(2,1)  = 1e-15;
+    b       = pi*sum(A,2);
+    x       = pi*ones(n,1);
+    
+    LU1     = LUfatt(A);
+    x1      = LUsolve(LU1,b);
+    
+    A([1 2],:) = A([2 1],:);
+    b([1 2])   = b([2 1]);
+    
+    LU2     = LUfatt(A);
+    x2      = LUsolve(LU2,b);
+    return
+    \end{lstlisting}
+    
+    \begin{lstlisting}[language=Matlab]
+    function LU = LUfatt(A)
+    %
+    % LU = LUfatt(A)          fattorizzazione "naive" LU di A
+    %
+    %                               Rel. 2025-11-18
+    n = size(A,1);
+    LU = A;
+    for i = 1:n-1
+        if LU(i,i)==0, error('no LU'), end
+        LU(i+1:n,i)     = LU(i+1:n,i)/LU(i,i);      % vettore di Gauss
+        LU(i+1:n,i+1:n) = LU(i+1:n,i+1:n) - LU(i+1:n,i)*LU(i,i+1:n);
+    end
+    return
+    \end{lstlisting}
+    
+    \begin{lstlisting}[language=Matlab]
+    function x = LUsolve(LU,b)
+    %
+    % x = LUsolve(LU,b)    risolve per i fattori triangolari
+    %
+    %                               Rel. 2025-11-18
+    n = length(b);
+    x = b(:);
+    for i = 2:n
+        x(i:n) = x(i:n) - LU(i:n,i-1)*x(i-1);
+    end
+    for i = n:-1:1
+        x(i) = x(i)/LU(i,i);
+        x(1:i-1) = x(1:i-1)-LU(1:i-1,i)*x(i);
+    end
+    return
+    \end{lstlisting}
+
+\subsection{Risultati del Test}
+Eseguendo \texttt{test\_lu(8)} con $\epsilon = 10^{-15}$:
+\begin{itemize}
+    \item **Soluzione Esatta ($x$)**: $\approx 3.1416$
+    \item **Sistema 1 ($x_1$)**: Risultati errati ($\approx -7.1054$ per la prima componente). L'errore è grande.
+    \item **Sistema 2 ($x_2$)**: Risultati corretti ($\approx 3.1416$). L'errore è dell'ordine della precisione di macchina.
+\end{itemize}
+
+La matrice $LU1$ mostra elementi molto grandi (ordine $10^{15}$), sintomo di instabilità. La matrice $LU2$ ha elementi limitati.
+Questo dimostra che la scelta dell'elemento pivotale (l'elemento sulla diagonale per cui si divide) è cruciale per la stabilità numerica. Un pivot molto piccolo ($\epsilon$) causa una crescita incontrollata degli errori di arrotondamento.
+
+\subsection{Matrici di Permutazione}
+Dato $\mathbf{v} = \begin{pmatrix} v_1 \\ \vdots \\ k_1 \\ \vdots \\ k_2 \\ \vdots \\ v_n \end{pmatrix} \in \mathbb{R}^n$, vogliamo definire una matrice $P \in \mathbb{R}^{n \times n}$ tale che:
+$$ P \mathbf{v} = \begin{pmatrix} v_1 \\ \vdots \\ k_2 \\ \vdots \\ k_1 \\ \vdots \\ v_n \end{pmatrix} $$
+ovvero gli elementi $k_1$ e $k_2$ di $\mathbf{v}$ sono permutati tra loro.
+
+Ricordando che $I = \sum_{i=1}^n \mathbf{e}_i \mathbf{e}_i^T$, dove $\mathbf{e}_i$ è l'$i$-esimo versore.
+Si ha:
+$$ I \mathbf{v} = \sum_{i=1}^n \mathbf{e}_i (\mathbf{e}_i^T \mathbf{v}) = \sum_{i=1}^n v_i \mathbf{e}_i = \mathbf{v} $$
+
+Nel nostro caso vogliamo invece scambiare le componenti $k_1$ e $k_2$. Quindi, se definiamo:
+\begin{equation} \label{eq:P_elem}
+    P = \sum_{\substack{i=1 \\ i \neq k_1, k_2}}^n \mathbf{e}_i \mathbf{e}_i^T + \mathbf{e}_{k_2}\mathbf{e}_{k_1}^T + \mathbf{e}_{k_1}\mathbf{e}_{k_2}^T
+\end{equation}
+otteniamo che:
+$$ P \mathbf{v} = \sum_{\substack{i=1 \\ i \neq k_1, k_2}}^n \mathbf{e}_i (\mathbf{e}_i^T \mathbf{v}) + \mathbf{e}_{k_2}(\mathbf{e}_{k_1}^T \mathbf{v}) + \mathbf{e}_{k_1}(\mathbf{e}_{k_2}^T \mathbf{v}) $$
+$$ = \sum_{i \neq k_1, k_2} v_i \mathbf{e}_i + v_{k_1} \mathbf{e}_{k_2} + v_{k_2} \mathbf{e}_{k_1} $$
+quindi $P$ è proprio la matrice che ci serve.
+
+\begin{definition}
+$P$ definita come nella \eqref{eq:P_elem} si chiama \textbf{matrice di permutazione elementare}.
+\end{definition}
+
+Esaminiamo la struttura di $P$:
+
+\[
+\begin{array}{cc}
+P = 
+\left[
+\begin{array}{ccccccc}
+1 & \dots & 0 & \dots & 0 & \dots & 0 \\
+\vdots & \ddots & \vdots & & \vdots & & \vdots \\
+0 & \dots & \colorbox{yellow!50}{0} & \dots & \colorbox{yellow!50}{1} & \dots & 0 \\
+\vdots & & \vdots & \ddots & \vdots & & \vdots \\
+0 & \dots & \colorbox{yellow!50}{1} & \dots & \colorbox{yellow!50}{0} & \dots & 0 \\
+\vdots & & \vdots & & \vdots & \ddots & \vdots \\
+0 & \dots & 0 & \dots & 0 & \dots & 1
+\end{array}
+\right]
+&
+\begin{array}{l}
+\vphantom{1} \\ \vphantom{\vdots} \\ \leftarrow k_1 \\ \vphantom{\vdots} \\ \leftarrow k_2 \\ \vphantom{\vdots} \\ \vphantom{1}
+\end{array}
+\\
+\begin{array}{ccccccc}
+    \phantom{1} & \phantom{\dots00} & \uparrow & \phantom{\dots00} & \uparrow & \phantom{\dots} & \phantom{0} \\
+    \phantom{1} & \phantom{\dots00} & k_1 & \phantom{\dots00} & k_2 & \phantom{\dots} & \phantom{0}
+    \end{array}
+&
+\end{array}
+\]
+
+Pertanto, $P$ si ottiene dalla matrice identità scambiando le colonne (o righe) $k_1$ e $k_2$ tra loro.
+
+Inoltre:
+\begin{enumerate}
+    \item $P = P^T$ (simmetria);
+    \item $P^{-1} = P = P^T$ ($P$ è ortogonale);
+\end{enumerate}
+
+Supponiamo, ora, di aver $k$ matrici di permutazione elementari:
+$$ P_1, P_2, \dots, P_k $$
+ciascuna che scambia 2 elementi di un vettore tra loro.
+
+Se ora moltiplichiamo:
+\begin{equation} \label{eq:perm_prod}
+    \underbrace{P_k P_{k-1} \dots P_1}_{P} 
+    \begin{bmatrix} 1 \\ 2 \\ \vdots \\ n \end{bmatrix} = 
+    \begin{bmatrix} l_1 \\ l_2 \\ \vdots \\ l_n \end{bmatrix} \equiv \mathbf{p}
+\end{equation}
+con $\{l_1, \dots, l_n\}$ permutazione di $\{1, \dots, n\}$.
+
+\begin{osservazione}
+\begin{enumerate}
+    \item Se chiamiamo $P = P_k P_{k-1} \dots P_1$, allora:
+    $$ P^{-1} = (P_k P_{k-1} \dots P_1)^T = P_1^T P_2^T \dots P_k^T = P_1 P_2 \dots P_k = P^T $$
+    pertanto $P$ è ortogonale (ma non più simmetrica, in generale);
+    
+    \item Per tenere conto di $P$ è sufficiente memorizzare il vettore $\mathbf{p}$ in \eqref{eq:perm_prod}.
+    Infatti, per esempio, in Matlab il prodotto $P \cdot \mathbf{x}$ si realizza con \texttt{x(p)}.
+    
+    Ad esempio, se $\mathbf{x} = \begin{bmatrix} 3 \\ 7 \\ 8 \end{bmatrix}$ e $\mathbf{p} = \begin{bmatrix} 3 \\ 1 \\ 2 \end{bmatrix}$,
+    allora $\mathbf{x}(\mathbf{p}) = \begin{bmatrix} 8 \\ 3 \\ 7 \end{bmatrix}$.
+\end{enumerate}
+\end{osservazione}
+
+\subsection{Fattorizzazione PA = LU (con Pivoting Parziale)}
+L'utilizzo delle matrici di permutazione ci permette di definire una variante stabile della fattorizzazione LU, applicabile a qualsiasi matrice nonsingolare.
+Ricordiamo che se $A = \begin{pmatrix} A_{11} & A_{12} \\ 0 & A_{22} \end{pmatrix}$, allora $\det(A) = \det(A_{11})\det(A_{22})$; pertanto, se A è nonsingolare, tali sono anche $A_{11}$ e $A_{12}$.
+Usiamo la notazione introdotta per definire il metodo di eliminazione di Gauss:
+
+\[
+A = 
+\begin{bmatrix}
+a_{11}^{(1)} & a_{12}^{(1)} & \dots & \dots & a_{1n}^{(1)} \\
+a_{21}^{(1)} & a_{22}^{(1)} & \dots & \dots & a_{2n}^{(1)} \\
+\vdots & \vdots & & & \vdots \\
+\vdots & \vdots & & & \vdots \\
+a_{n1}^{(1)} & a_{n2}^{(1)} & \dots & \dots & a_{nn}^{(1)}
+\end{bmatrix}
+\equiv A^{(1)}
+\]
+
+Sia \colorbox{yellow!50}{$k_1$} l'indice di riga, in colonna 1:
+\[
+|a_{k_1, 1}^{(1)}| = \max_{k \ge 1} |a_{k, 1}^{(1)}| > 0 \quad (\text{altrimenti } A \text{ è singolare})
+\]
+Pertanto, possiamo definire la matrice di permutazione elementare $P_1$, che scambia gli elementi 1 e $k_1$ ($k_1 \ge 1$) di un vettore $\mathbf{e}_1$, quindi:
+
+\[
+P_1 A = 
+\left[
+\begin{array}{ccccc}
+\colorbox{yellow!50}{$a_{k_1 1}^{(1)}$} & a_{k_1 2}^{(1)} & \dots & \dots & a_{k_1 n}^{(1)} \\
+a_{21}^{(1)} & a_{22}^{(1)} & \dots & \dots & a_{2n}^{(1)} \\
+\vdots & \vdots & & & \vdots \\
+a_{11}^{(1)} & a_{12}^{(1)} & \dots & \dots & a_{1n}^{(1)} \\
+\vdots & \vdots & & & \vdots \\
+a_{n1}^{(1)} & a_{n2}^{(1)} & \dots & \dots & a_{nn}^{(1)}
+\end{array}
+\right]
+\begin{array}{l}
+\leftarrow 1 \\
+\\
+\\
+\leftarrow k_1 \\
+\\
+\\
+\end{array}
+\]
+
+Possiamo quindi definire il primo vettore elementare di Gauss,
+\[
+\mathbf{g}_1 = \frac{1}{a_{k_1 1}^{(1)}} (0, \,\, a_{21}^{(1)}, \dots, \,\, \overset{\substack{k_1 \\ \downarrow}}{a_{11}^{(1)}}, \dots, \,\, a_{n1}^{(1)})^T
+\]
+(\colorbox{white}{\textbf{oss}: gli elementi di $\mathbf{g}_1$ hanno modulo $\le 1$}) \\
+e la corrispondente prima matrice elementare di Gauss,
+\[
+L_1 = I - \mathbf{g}_1 \mathbf{e}_1^T,
+\]
+tale che:
+
+\[
+L_1 P_1 A = 
+\begin{bmatrix}
+a_{k_1 1}^{(1)} & a_{k_1 2}^{(1)} & \dots & \dots & a_{k_1 n}^{(1)} \\
+0 & \colorbox{yellow!50}{$a_{22}^{(2)}$} & \dots & \dots & a_{2n}^{(2)} \\
+\vdots & \vdots & & & \vdots \\
+\vdots & \vdots & & & \vdots \\
+0 & \colorbox{yellow!50}{$a_{n2}^{(2)}$} & \dots & \dots & a_{nn}^{(2)}
+\end{bmatrix}
+\equiv A^{(2)}
+\]
+
+Procedendo come prima, definisco $k_2$:
+\[
+|a_{k_2 2}^{(2)}| = \max_{\colorbox{yellow!50}{$k \ge 2$}} |a_{k 2}^{(2)}| \colorbox{white}{$> 0$} \quad \parbox{4cm}{(altrimenti $A^{(2)}$, e quindi $A$, sarebbero singolari)}
+\]
+Quindi, definendo la matrice di permutazione elementare $P_2$, che permuta l'elemento 2 con il $k_2$ ($k_2 \ge 2$) di un vettore, otteniamo che:
+
+\[
+P_2 L_1 P_1 A = 
+\begin{bmatrix}
+a_{k_1 1}^{(1)} & a_{k_1 2}^{(1)} & \dots & \dots & a_{k_1 n}^{(1)} \\
+0 & \colorbox{yellow!50}{$a_{k_2 2}^{(2)}$} & \dots & \dots & \colorbox{yellow!50}{$a_{k_2 n}^{(2)}$} \\
+\vdots & \vdots & & & \vdots \\
+\vdots & \colorbox{yellow!50}{$a_{22}^{(2)}$} & \dots & \dots & \colorbox{yellow!50}{$a_{2n}^{(2)}$} \\
+\vdots & \vdots & & & \vdots \\
+0 & a_{n2}^{(2)} & \dots & \dots & a_{nn}^{(2)}
+\end{bmatrix}
+\begin{matrix} \\ \leftarrow 2 \\ \\ \leftarrow k_2 \\ \\ \\ \end{matrix}
+\]
+
+Pertanto è definito il secondo vettore elementare di Gauss,
+\[
+\mathbf{g}_2 = \frac{1}{a_{k_2 2}^{(2)}} (\, \overbrace{0 \quad 0}^{2} \,\, a_{32}^{(2)} \dots \overset{\downarrow k_2}{a_{22}^{(2)}} \dots a_{n2}^{(2)} \, )^T
+\]
+e la corrispondente matrice elementare di Gauss,
+\[
+L_2 = I - \mathbf{g}_2 \mathbf{e}_2^T,
+\]
+tale che:
+
+\[
+L_2 P_2 L_1 P_1 A = 
+\begin{bmatrix}
+a_{k_1 1}^{(1)} & a_{k_1 2}^{(1)} & \dots & \dots & a_{k_1 n}^{(1)} \\
+0 & a_{k_2 2}^{(2)} & \dots & \dots & a_{k_2 n}^{(2)} \\
+\vdots & 0 & \colorbox{yellow!50}{$a_{33}^{(3)}$} & \dots & a_{3n}^{(3)} \\
+\vdots & \vdots & \vdots & & \vdots \\
+0 & 0 & \colorbox{yellow!50}{$a_{n3}^{(3)}$} & \dots & a_{nn}^{(3)}
+\end{bmatrix}
+\equiv A^{(3)}
+\]
+
+Procedendo in modo analogo, se $\det(A) \neq 0$, allora si otterrà, infine, che:
+
+\[
+L_{n-1} P_{n-1} \dots L_2 P_2 L_1 P_1 A = 
+\begin{bmatrix}
+a_{k_1 1}^{(1)} & \dots & \dots & \dots & a_{k_1 n}^{(1)} \\
+0 & a_{k_2 2}^{(2)} & \dots & \dots & a_{k_2 n}^{(2)} \\
+\vdots & \ddots & \ddots & & \vdots \\
+\vdots & & \ddots & \ddots & \vdots \\
+0 & \dots & \dots & 0 & a_{k_n n}^{(n)}
+\end{bmatrix}
+\equiv A^{(n)} \equiv U,
+\]
+
+dove per $i = 1, \dots, n-1$:
+
+\begin{enumerate}
+    \item $|a_{k_i i}^{(i)}| = \max_{\colorbox{yellow!50}{$k \ge i$}} |a_{k i}^{(i)}| > 0$;
+    \item $P_i$ è la matrice di permutazione che permuta le righe $i$ e $k_i$ (\colorbox{yellow!50}{$k_i \ge i$});
+    \item $\mathbf{g}_i = \frac{1}{a_{k_i i}^{(i)}} ( \underbrace{\overbrace{0, \dots, 0}^{i}, a_{i+1, i}^{(i)}, \dots, \underset{\uparrow k_i}{a_{ii}^{(i)}}, \dots, a_{ni}^{(i)}}_{} )^T$ \\
+    (\colorbox{white}{\textbf{\underline{oss}} gli elementi di $\mathbf{g}_i$ ha tutti modulo $\le 1$});
+    \item $L_i = I - \mathbf{g}_i \mathbf{e}_i^T$.
+\end{enumerate}
