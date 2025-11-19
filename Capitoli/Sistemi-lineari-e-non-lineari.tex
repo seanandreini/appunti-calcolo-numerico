@@ -776,3 +776,172 @@ Poiché $i$ è generico, l'asserto segue.
 \begin{osservazione}
 Se $A$ è sdp, e quindi $A=LDL^T$, il fattore $U$ non è più da calcolare.
 \end{osservazione}
+
+
+%lezione 18 novembre
+\subsection{Casi particolari di Fattorizzazione LU}
+Data $A \in \mathbb{R}^{n \times n}$ con $\det(A) \neq 0$.
+Allora $A=LU \iff \det(A_k) \neq 0, \forall k=1, \dots, n$.
+Classi di matrici per cui questo è sempre vero:
+\begin{itemize}
+    \item A è a diagonale dominante;
+    \item A è simmetrica e definita positiva (sdp).
+\end{itemize}
+In particolare:
+$$ A \text{ sdp} \iff \exists L=(l_{ij}) \text{ triang. inf. unitaria}, D=\text{diag}(d_1, \dots, d_n) \text{ con } d_i>0 \text{ t.c. } A = LDL^T $$
+
+\subsubsection{Algoritmo di fattorizzazione $LDL^T$ per matrici sdp}
+Se $A$ è sdp, allora $A=A^T$ e quindi abbiamo necessità di specificare solo una porzione triangolare. Nel seguito, considereremo la parte triangolare inferiore di $A$. Ovvero, se $A=(a_{ij})$, considereremo solo gli elementi con $i \ge j$.
+
+Per ottenere l'algoritmo di fattorizzazione, imponiamo che $\forall j=1, \dots, n$, $i \ge j$, si abbia $a_{ij} = (LDL^T)_{ij}$.
+Ricordiamo che se $\mathbf{e}_i$ è l'$i$-esimo versore:
+\begin{align*}
+    a_{ij} &= \mathbf{e}_i^T A \mathbf{e}_j = \mathbf{e}_i^T L D L^T \mathbf{e}_j \\
+           &= (\mathbf{e}_i^T L) D (\mathbf{e}_j^T L)^T \\
+           &= \begin{pmatrix} l_{i1} & l_{i2} & \dots & l_{ii} & 0 & \dots \end{pmatrix} 
+              \begin{pmatrix} d_1 & & \\ & \ddots & \\ & & d_n \end{pmatrix}
+              \begin{pmatrix} l_{j1} \\ \dots \\ l_{jj} \\ 0 \\ \vdots \end{pmatrix} \\
+           &= \sum_{k=1}^{\min(i,j)=j} l_{ik} d_k l_{jk} = \sum_{k=1}^j l_{ik} l_{jk} d_k
+\end{align*}
+(dato che $L$ è triangolare inferiore).
+
+Abbiamo quindi concluso che per $j=1,\dots,n$ e $i \ge j$:
+$$ a_{ij} = \sum_{k=1}^j l_{ik} l_{jk} d_k = \sum_{k=1}^{j-1} l_{ik} l_{jk} d_k + l_{ij} \underbrace{l_{jj}}_{=1} d_j $$
+Distinguiamo i casi per la diagonale e fuori diagonale:
+\begin{itemize}
+    \item $i=j$: $a_{jj} = \sum_{k=1}^{j-1} l_{jk}^2 d_k + d_j \implies d_j = a_{jj} - \sum_{k=1}^{j-1} l_{jk}^2 d_k = v_j$
+    \item $i > j$: $a_{ij} = \sum_{k=1}^{j-1} l_{ik} l_{jk} d_k + l_{ij} d_j \implies l_{ij} = \frac{a_{ij} - \sum_{k=1}^{j-1} l_{ik} l_{jk} d_k}{d_j}$
+\end{itemize}
+
+L'algoritmo risultante (accesso per colonne):
+\[
+\begin{array}{l}
+    \textbf{for } j = 1:n \\
+    \quad d_j = a_{jj} - \sum_{k=1}^{j-1} l_{jk} \, \overbrace{\colorbox{yellow!50}{$l_{jk} d_k$}}^{\color{red}=v_k} \\
+    \\
+    \quad \textbf{for } i = j+1:n \\
+    \qquad l_{ij} = \dfrac{a_{ij} - \sum_{k=1}^{j-1} l_{ik} \, \overbrace{\colorbox{yellow!50}{$l_{jk} d_k$}}^{\color{red}=v_k}}{d_j} \\
+    \quad \textbf{end} \\
+    \textbf{end}
+\end{array}
+\]
+
+Utilizzando un vettore di appoggio $\mathbf{v}$ di dimensione al più $n-1$, si verificano che le operazioni richieste sono $\approx \frac{1}{3}n^3$ (metà rispetto a LU).
+
+\paragraph{Occupazione di Memoria}
+Gli elementi della porzione triangolare inferiore di $A$ possono essere sovrascritti con gli elementi significativi dei fattori $L$ e $D$:
+$$
+A = \begin{pmatrix}
+a_{11} & & & \\
+a_{21} & a_{22} & & \\
+\vdots & \dots & \ddots & \\
+a_{n1} & \dots & \dots & a_{nn}
+\end{pmatrix} 
+\xrightarrow{\text{sovrascrittura}} 
+\begin{pmatrix}
+d_1 & & & \\
+l_{21} & d_2 & & \\
+l_{31} & l_{32} & d_3 & \\
+\vdots & \dots & \dots & d_n
+\end{pmatrix}
+$$
+
+
+\subsection{Funzioni Matlab per la Risoluzione di Sistemi}
+
+\subsubsection{Risoluzione con Fattorizzazione LU}
+Scriviamo una function che, dato in ingresso la matrice `LU` (che contiene i fattori $L$ e $U$ sovrascritti su $A$) e il termine noto `b`, risolve il sistema $A\mathbf{x} = \mathbf{b}$.
+Ricordiamo che $A=LU$, quindi risolviamo $L\mathbf{y}=\mathbf{b}$ e poi $U\mathbf{x}=\mathbf{y}$.
+
+\begin{lstlisting}
+function x = LUsolve(LU, b)
+% x = LUsolve(LU, b)
+% Risolve il sistema lineare per i fattori L ed U della matrice 
+% dei coefficienti.
+%
+% Input:
+%   LU - matrice con i fattori L ed U (L triang. inf unitaria, U triang. sup);
+%   b  - termine noto;
+%
+% Output:
+%   x  - soluzione.
+%
+% Rel. 2025-12-18.
+
+if nargin < 2, error('dati insufficienti'), end
+[m, n] = size(LU);
+if m ~= n || length(b) ~= n
+    error('dimensione dati inconsistenti')
+end
+
+x = b(:); % Inizializzazione (x <- b)
+
+% Risoluzione Ly = b (Sostituzione in avanti)
+for i = 2:n % fattore L
+    x(i:n) = x(i:n) - LU(i:n, i-1) * x(i-1); 
+end
+
+% Risoluzione Ux = y (Sostituzione all'indietro)
+for i = n:-1:1 %fattore U
+    if LU(i,i) == 0
+        error('fattore U singolare')
+    end
+    x(i) = x(i) / LU(i,i); 
+
+    x(1:i-1) = x(1:i-1) - LU(1:i-1, i) * x(i); 
+end
+
+return
+\end{lstlisting}
+\vspace{0.3 cm}
+\subsubsection{Risoluzione con Fattorizzazione $LDL^T$}
+Scrivere una function che, avendo in ingresso la matrice LD con l'informazione della fattorizzazione $LDL^T$ di una matrice sdp A, nella porzione triangolare inferiore, risolva il sistema $A\mathbf{x} = \mathbf{b}$.
+Dobbiamo risolvere:
+1. $L \mathbf{y} = \mathbf{b}$
+2. $D \mathbf{z} = \mathbf{y}$
+3. $L^T \mathbf{x} = \mathbf{z}$
+
+\begin{lstlisting}
+function x = LDsolve(LD, b)
+% x = LDsolve(LD, b)
+% Risolve il sistema lineare per i fattori L, D, L' di una matrice sdp.
+%
+% Input:
+%   LD - matrice con l'informazione dei fattori L e D
+%        (D sulla diagonale, L nella parte strettamente inf.);
+%   b  - termine noto;
+%
+% Output:
+%   x  - soluzione.
+%
+% Rel. 2025-11-18.
+
+if nargin < 2, error('dati insufficienti'), end
+[m, n] = size(LD);
+if m ~= n || length(b) ~= n
+    error('dati non compatibili')
+end
+
+x = b(:);
+d = diag(LD); % Estrae la diagonale D
+if any(d <= 0), error('D non positiva'), end
+
+% 1. Risoluzione Ly = b (Sostituzione in avanti per colonne)
+% L è strettamente triangolare inferiore in LD
+for i = 2:n
+    % L(i:n, i-1) è la colonna i-1 di L
+    x(i:n) = x(i:n) - LD(i:n, i-1) * x(i-1); % axpy
+end
+
+% 2. Risoluzione Dz = y (Sistema diagonale)
+x = x ./ d; % fattore D
+
+% 3. Risoluzione L'x = z (Sostituzione all'indietro).
+for i = n-1:-1:1
+    x(i) = x(i) - LD(i+1:n, i)' * x(i+1:n); % prodotto scalare (negli appunti del prof c'è LD(i+1:n, i+1)' ma dovrebbe essere più corretto così)
+    % Nota: qui usiamo un prodotto scalare, ma l'accesso a LD è
+    % sempre per colonne (LD(..., i)).
+end
+
+return
+\end{lstlisting}
