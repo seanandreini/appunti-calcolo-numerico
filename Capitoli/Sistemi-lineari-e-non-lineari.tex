@@ -1307,3 +1307,357 @@ dove per $i = 1, \dots, n-1$:
     (\colorbox{white}{\textbf{\underline{oss}} gli elementi di $\mathbf{g}_i$ ha tutti modulo $\le 1$});
     \item $L_i = I - \mathbf{g}_i \mathbf{e}_i^T$.
 \end{enumerate}
+
+
+%lezione 25 novembre
+\subsection{Fattorizzazione LU con Pivoting (Parziale)}
+Se $A \in \mathbb{R}^{n \times n}$ è non singolare, allora possiamo sempre definire la fattorizzazione:
+\begin{equation} \label{eq:algoritmo_passi}
+L_{n-1} P_{n-1} \dots L_1 P_1 A = A^{(n)} \equiv U
+\end{equation}
+dove, $\forall i = 1, \dots, n-1$:
+\begin{itemize}
+    \item $P_i$ è una matrice di permutazione elementare che permuta gli elementi $i$ e $k_i$ ($k_i \ge i$) di un vettore, dove $k_i : |a_{k_i i}^{(i)}| = \max_{k \ge i} |a_{ki}^{(i)}|$ ( $>0$, se $A$ è nonsingolare); da questo deriva la denominazione di "pivoting" per questa procedura.
+    \item $L_i = I - \mathbf{g}_i \mathbf{e}_i^T$, essendo $\mathbf{g}_i$ l'$i$-esimo vettore elementare di Gauss:
+    $$ \mathbf{g}_i = \frac{1}{a_{k_i i}^{(i)}} (0, \dots, 0, a_{i+1, i}^{(i)}, \dots, a_{ni}^{(i)})^T $$
+\end{itemize}
+
+Inoltre, gli elementi di $\mathbf{g}_i$ hanno tutti modulo $\le 1$.
+
+Ricordiamo che $P_i = P_i^T = P_i^{-1} \implies P_i^2 = I$.
+
+Cerchiamo di "leggere" meglio la \eqref{eq:algoritmo_passi}.
+Consideriamo il caso $n=4$. Pertanto avremo:
+$$ L_3 P_3 L_2 P_2 L_1 P_1 A = U $$
+Inserendo delle identità ($P_i^2=I$) tra i termini:
+\begin{align*}
+    L_3 P_3 L_2 \underbrace{P_3 P_3}_{I} P_2 L_1 \underbrace{P_2 P_3 P_3 P_2}_{I} P_1 A &= U \\
+    L_3 (P_3 L_2 P_3) (P_3 P_2 L_1 P_2 P_3) (P_3 P_2 P_1) A &= U
+\end{align*}
+Definiamo:
+\begin{itemize}
+    \item $\hat{L}_3 = L_3$
+    \item $\hat{L}_2 = P_3 L_2 P_3$
+    \item $\hat{L}_1 = (P_3 P_2) L_1 (P_2 P_3)$
+    \item $P = P_3 P_2 P_1$
+\end{itemize}
+Quindi, in definitiva, abbiamo ottenuto la fattorizzazione:
+$$ \hat{L}_3 \hat{L}_2 \hat{L}_1 P A = U $$
+
+In generale, per $n$ generico, la \eqref{eq:algoritmo_passi} si può riscrivere, utilizzando argomenti analoghi, come:
+\begin{equation} \label{eq:fattorizzazione_generale}
+    \hat{L}_{n-1} \hat{L}_{n-2} \dots \hat{L}_1 P A = U
+\end{equation}
+dove:
+\begin{itemize}
+    \item $\hat{L}_{n-1} = L_{n-1}$
+    \item $\hat{L}_i = (P_{n-1} \dots P_{i+1}) L_i (P_{i+1} \dots P_{n-1})$, per $i=1, \dots, n-2$.
+    \item $P = P_{n-1} \dots P_1$.
+\end{itemize}
+
+Andiamo a vedere la struttura di $\hat{L}_i$:
+\begin{align*}
+    \hat{L}_i &= (P_{n-1} \dots P_{i+1}) (I - \mathbf{g}_i \mathbf{e}_i^T) (P_{i+1} \dots P_{n-1}) \\
+              &= \underbrace{(P_{n-1} \dots P_{i+1})(P_{i+1} \dots P_{n-1})}_{I} - (P_{n-1} \dots P_{i+1}) \mathbf{g}_i \mathbf{e}_i^T (P_{i+1} \dots P_{n-1}) \\
+              &= I - (P_{n-1} \dots P_{i+1} \mathbf{g}_i) (\mathbf{e}_i^T P_{i+1} \dots P_{n-1})
+\end{align*}
+Analizziamo il termine $(\mathbf{e}_i^T P_{i+1} \dots P_{n-1})$. Poiché $P_k$ scambia righe con indici $\ge k > i$, il vettore $\mathbf{e}_i^T$ (che ha 1 in posizione $i$ e 0 altrove) non viene influenzato da queste permutazioni.
+$$ \mathbf{e}_i^T P_{i+1} = \mathbf{e}_i^T \implies \dots \implies \mathbf{e}_i^T P_{i+1} \dots P_{n-1} = \mathbf{e}_i^T $$
+Pertanto:
+$$ \hat{L}_i = I - \hat{\mathbf{g}}_i \mathbf{e}_i^T $$
+dove
+\begin{align*}
+    \hat{\mathbf{g}}_i &= P_{n-1} \cdot \dots \cdot P_{i+1} \mathbf{g}_i \\
+    &= (P_{n-1} \cdot \dots \cdot P_{i+2}) P_{i+1} \mathbf{g}_i \\
+    &= \frac{1}{a_{k_i i}^{(i)}} (\, \overbrace{0 \dots \dots 0}^{i} \quad * \quad * \dots * \, )^T
+\end{align*}Quindi $L_i$ e $\hat{L}_i$ hanno la medesima struttura di matrice elementare di Gauss (la $i$-esima, per la precisione).
+
+In virtù di questo, possiamo formalmente riscrivere la \eqref{eq:fattorizzazione_generale} come:
+$$ L^{-1} P A = U $$
+con $L^{-1} = \hat{L}_{n-1} \dots \hat{L}_1$.
+
+Pertanto, osservando che $P = P_{n-1} \dots P_1$ è una matrice di permutazione (quindi ortogonale), abbiamo dimostrato il seguente risultato.
+
+\begin{teorema}
+Se $A \in \mathbb{R}^{n \times n}$ e $\det(A) \neq 0$, allora esiste una matrice di permutazione $P \in \mathbb{R}^{n \times n}$ tale che:
+\begin{equation} \label{eq:PA_LU}
+    P A = L U
+\end{equation}
+dove $L$ è triangolare inferiore a diagonale unitaria e $U$ è triangolare superiore.
+\end{teorema}
+La \eqref{eq:PA_LU} definisce la fattorizzazione LU con pivoting di $A$.
+
+\paragraph{Risoluzione del sistema lineare}
+Se dobbiamo risolvere il sistema lineare $A\mathbf{x} = \mathbf{b}$ e abbiamo la fattorizzazione $PA=LU$, allora il sistema è equivalente a:
+$$ P A \mathbf{x} = P \mathbf{b} $$
+da cui, essendo $PA=LU$:
+$$ L U \mathbf{x} = P \mathbf{b} $$
+Pertanto, risolviamo nell'ordine i sistemi triangolari:
+\begin{enumerate}
+    \item $L \mathbf{y} = P \mathbf{b}$
+    \item $U \mathbf{x} = \mathbf{y}$
+\end{enumerate}
+\begin{osservazione}
+Il vettore $P\mathbf{b}$ è un vettore contenente una permutazione degli elementi di $\mathbf{b}$. In Matlab, se $p$ è il vettore degli indici di permutazione ($P\mathbf{b} \leftrightarrow \mathbf{b}(p)$), sarà sufficiente memorizzare il vettore $p$.
+\end{osservazione}
+
+\subsection{Costo computazionale della fattorizzazione}
+\paragraph{Occupazione di memoria:}
+Come visto per la fattorizzazione LU, possiamo utilizzare gli elementi che si azzerano ai vari passi dell'algoritmo per memorizzare gli elementi significativi dei vettori di Gauss.
+A questi ultimi, però, vanno applicate le permutazioni definite nei passi successivi dell'algoritmo. Pertanto, alla fine, $A$ sarà sovrascritta come visto per la fattorizzazione LU con gli elementi significativi dei fattori $L$ e $U$ (rispettivamente, la porzione strettamente triangolare inferiore e la porzione triangolare superiore).
+
+Riguardo alla matrice di permutazione, si utilizza un vettore di interi $p$ di dimensione $n$, inizializzato con $(1, \dots, n)^T$, a cui si applicano le permutazioni elementari definite nell'algoritmo di fattorizzazione.
+
+\paragraph{Operazioni algebriche elementari:}
+Rimangono le stesse dell'algoritmo classico (circa $\frac{2}{3}n^3$ flops).
+A queste vanno aggiunti i confronti per il calcolo dei pivot:
+$$ \sum_{i=1}^{n-1} (n-i) = \sum_{i=1}^{n-1} i \approx \frac{n^2}{2} $$
+Tuttavia, questi sono trascurabili rispetto alle operazioni algebriche ($O(n^3)$).
+
+Va considerato che, al generico passo $i$ di fattorizzazione, vanno scambiate le righe $i$ e $k_i$ della matrice. Questi scambi in memoria hanno un costo non indifferente sulle architetture odierne.
+
+\paragraph{Pseudo-codice Matlab}
+Scriviamo uno pseudo-codice Matlab che implementa la fattorizzazione. In esso \texttt{a} è un array $n \times n$ che contiene la matrice $A$.
+
+\begin{lstlisting}[language=matlab, frame=none, numbers=none]
+n = size(a,1);
+p = 1:n; % vettore con le permutazioni
+
+for i = 1:n-1
+    % ricerca del pivot
+    [ki, mi] = max(abs(a(i:n, i)));
+    if mi == 0, error('matrice singolare'), end
+    
+    ki = ki + i - 1; % indice assoluto
+    
+    if ki > i
+        % scambio righe in A e in p
+        a([i ki], :) = a([ki i], :);
+        p([i ki]) = p([ki i]);
+    end
+    
+    % calcolo moltiplicatori e aggiornamento
+    a(i+1:n, i) = a(i+1:n, i) / a(i,i); % g_i
+    
+    % aggiornamento sottomatrice
+    a(i+1:n, i+1:n) = a(i+1:n, i+1:n) - ...
+                      a(i+1:n, i) * a(i, i+1:n);
+end
+
+if a(n,n) == 0, error('matrice singolare'), end
+\end{lstlisting}
+
+
+%lezione 26 novembre
+\subsection{Condizionamento dei Sistemi Lineari}
+
+\subsubsection{Un Esempio Motivante}
+Consideriamo una matrice $A \in \mathbb{R}^{10 \times 10}$ bidiagonale, con 1 sulla diagonale principale e un parametro $\alpha$ sulla prima sottodiagonale:
+$$ A = \begin{pmatrix} 
+1 & & & & & \\
+\alpha & 1 & & & & \\
+& \alpha & 1 & & & \\
+& & \ddots & \ddots & & \\
+& & & \alpha & 1 & \\
+& & & & \alpha & 1
+\end{pmatrix} $$
+Sia $\mathbf{b} \in \mathbb{R}^{10}$. Vogliamo risolvere $A\mathbf{x} = \mathbf{b}$.
+Scegliamo $\mathbf{x} = (\beta, \dots, \beta)^T \in \mathbb{R}^{10}$.
+
+Possiamo scrivere una funzione Matlab `bidia` per risolvere questo sistema e testare la stabilità al variare di $\alpha$.
+
+\begin{lstlisting}[language=Matlab]
+function x = bidia(alfa, beta)
+    x = beta * ones(10,1);
+    % Calcolo termine noto b in modo che la soluzione esatta sia x
+    % b = A * x; 
+    % (Qui simuliamo la risoluzione o un comportamento specifico)
+    % Esempio di forward substitution semplificata o test
+    x(2:10) = x(2:10) + beta * alfa; 
+    for i = 2:10
+        x(i) = x(i) - alfa * x(i-1);
+    end
+    return
+end
+\end{lstlisting}
+
+**Risultati sperimentali:**
+\begin{itemize}
+    \item Con $\alpha=2$ (e $\beta=100$?), i risultati divergono rapidamente.
+    \item Con $\alpha=0.5$, i risultati sono stabili.
+    \item Con $\alpha=1.1$, si notano errori che crescono.
+    \item Con $\alpha=\pi$, l'errore esplode ($10^2$).
+\end{itemize}
+
+Cosa è successo? Il motivo di quanto osservato è spiegato dall'analisi del \textbf{condizionamento} del problema.
+
+\subsubsection{Analisi del Condizionamento}
+Vogliamo confrontare il problema esatto:
+\begin{equation} \label{eq:exact}
+    A\mathbf{x} = \mathbf{b} \quad (\text{con } \det(A) \neq 0)
+\end{equation}
+con quello perturbato:
+\begin{equation} \label{eq:perturbed}
+    (A + \Delta A)(\mathbf{x} + \Delta \mathbf{x}) = \mathbf{b} + \Delta \mathbf{b}
+\end{equation}
+dove:
+\begin{itemize}
+    \item $\Delta A \in \mathbb{R}^{n \times n}$ contiene le perturbazioni sugli elementi di $A$;
+    \item $\Delta \mathbf{b} \in \mathbb{R}^n$ contiene le perturbazioni sugli elementi di $\mathbf{b}$;
+    \item $\Delta \mathbf{x} \in \mathbb{R}^n$ è la perturbazione risultante degli elementi di $\mathbf{x}$ (la soluzione).
+\end{itemize}
+
+Vogliamo quantificare come $\Delta A$ e $\Delta \mathbf{b}$ (perturbazioni sui dati di ingresso) influenzano $\Delta \mathbf{x}$ (perturbazione del risultato). A questo fine è necessario introdurre la nozione di norma indotta su matrici.
+
+\subsubsection{Norme Vettoriali e Matriciali}
+
+\begin{definition}[Norma Vettoriale]
+Sia $V$ uno spazio vettoriale (es. $\mathbb{R}^n$). Una funzione $\| \cdot \|: V \to \mathbb{R}$ si dice \textbf{norma} su $V$ se soddisfa:
+\begin{enumerate}
+    \item $\forall \mathbf{v} \in V, \| \mathbf{v} \| \ge 0$ e $\| \mathbf{v} \| = 0 \iff \mathbf{v} = \mathbf{0}$;
+    \item $\forall \mathbf{v} \in V, \alpha \in \mathbb{R}, \| \alpha \mathbf{v} \| = |\alpha| \| \mathbf{v} \|$ (omogeneità);
+    \item $\forall \mathbf{x}, \mathbf{y} \in V, \| \mathbf{x} + \mathbf{y} \| \le \| \mathbf{x} \| + \| \mathbf{y} \|$ (disuguaglianza triangolare).
+\end{enumerate}
+\end{definition}
+
+Nel caso $V = \mathbb{R}^n$, la classe di norme più utilizzata è: $\mathbf{v} = (v_1, \dots, v_n)^T$,
+$$ \| \mathbf{v} \|_p = \sqrt[p]{\sum_{i=1}^n |v_i|^p}, \quad p \ge 1. $$
+I valori di $p$ più utilizzati sono:
+\begin{itemize}
+    \item $p=1$: $\| \mathbf{v} \|_1 = \sum_{i=1}^n |v_i|$ (norma 1 o Manhattan);
+    \item $p=2$: $\| \mathbf{v} \|_2 = \sqrt{\sum_{i=1}^n |v_i|^2} = \sqrt{\mathbf{v}^T \mathbf{v}}$ (norma Euclidea);
+    \item $p=\infty$: $\| \mathbf{v} \|_\infty = \lim_{p \to \infty} \| \mathbf{v} \|_p = \max_{i=1,\dots,n} |v_i|$ (norma infinito o del massimo).
+\end{itemize}
+
+\begin{esempio}
+Sia $\mathbf{v} = (-7, 2, 4)^T$.
+\begin{itemize}
+    \item $\| \mathbf{v} \|_1 = 7 + 2 + 4 = 13$
+    \item $\| \mathbf{v} \|_2 = \sqrt{49 + 4 + 16} = \sqrt{69}$
+    \item $\| \mathbf{v} \|_\infty = 7$
+\end{itemize}
+\end{esempio}
+
+\begin{osservazione}
+In Matlab, la funzione norm implementa una generica norma $p$. `norm(v)` calcola la norma Euclidea (default), `norm(v, 1)` la norma 1, `norm(v, inf)` la norma infinito.
+\end{osservazione}
+
+\subsubsection{Norme Matriciali Indotte}
+Nel caso in cui $V=\mathbb{R}^{m \times n}$, possiamo definire norme su matrice, indotte dalle corrispondenti norme su vettore. In particolare, definiamo:
+Se $A \in \mathbb{R}^{m \times n}$,
+
+$$ \| A \|_p = \sup_{\substack{\mathbf{x} \in \mathbb{R}^n \\ \mathbf{x} \neq \mathbf{0}}} \frac{\| A \mathbf{x} \|_p}{\| \mathbf{x} \|_p} $$
+
+come la norma $p$ su matrice, indotta dalla corrispondente norma $p$ su vettore.
+Vediamo delle formulazioni equivalenti alla precedente. In particolare, osserviamo che il vettore
+$$ \mathbf{v} = \frac{\mathbf{x}}{\| \mathbf{x} \|_p} $$
+ha $\| \mathbf{v} \|_p = \left\| \frac{\mathbf{x}}{\| \mathbf{x} \|_p} \right\|_p = \frac{1}{\| \mathbf{x} \|_p} \| \mathbf{x} \|_p = 1$.
+
+Pertanto,
+\begin{align*}
+    \| A \|_p &= \sup_{\| \mathbf{x} \|_p > 0} \frac{\| A \mathbf{x} \|_p}{\| \mathbf{x} \|_p} = \\
+              &= \sup_{\| \mathbf{x} \|_p > 0} \left\| A \cdot \frac{\mathbf{x}}{\| \mathbf{x} \|_p} \right\|_p \\
+              &= \sup_{\| \mathbf{v} \|_p = 1} \| A \cdot \mathbf{v} \|_p \equiv \max_{\| \mathbf{v} \|_p = 1} \| A \cdot \mathbf{v} \|_p.
+\end{align*}
+
+\paragraph{Esempi}
+Se $A = \begin{bmatrix} a_{11} & \dots & a_{1n} \\ \vdots & & \vdots \\ a_{m1} & \dots & a_{mn} \end{bmatrix} \in \mathbb{R}^{m \times n}$, allora:
+
+$$ \| A \|_1 = \max_{j=1,\dots,n} \sum_{i=1}^m |a_{ij}| $$
+$$ \| A \|_\infty = \max_{i=1,\dots,m} \sum_{j=1}^n |a_{ij}| $$
+
+\begin{osservazione}
+$\| A \|_1 = \| A^T \|_\infty$.
+\end{osservazione}
+
+\paragraph{Esempio numerico}
+$$ A = \begin{bmatrix} 1 & -2 & 3 \\ -4 & 5 & 6 \end{bmatrix} \implies \begin{cases} \| A \|_1 = 9 \\ \| A \|_\infty = 15 \end{cases} $$
+
+\begin{osservazione}
+In Matlab:
+\begin{itemize}
+    \item \texttt{norm(A, 1)} $\to$ ritorna la norma 1 di A
+    \item \texttt{norm(A, inf)} $\to$ ritorna la norma $\infty$ di A
+\end{itemize}
+\end{osservazione}
+
+$$ \| A \|_2 = \sqrt{\rho(A^T A)} \equiv \sqrt{\rho(A \cdot A^T)} $$
+essendo $\rho(A^T A) = \max_{\lambda \in \sigma(A^T A)} |\lambda|$ il \textbf{raggio spettrale} di $A^T A$.
+
+\begin{osservazione}
+Se $A \in \mathbb{R}^{m \times n}$, allora $A^T A \in \mathbb{R}^{n \times n}$ e $A A^T \in \mathbb{R}^{m \times m}$ sono quadrate.
+\end{osservazione}
+
+Similmente, $\rho(A A^T) = \max_{\mu \in \sigma(A A^T)} |\mu|$ il raggio spettrale di $A A^T$.
+
+\begin{osservazione}
+\begin{enumerate}
+    \item \texttt{norm(A)} ritorna la norma 2 di A.
+    \item Se $A \in \mathbb{R}^{n \times n}$, $A$ ortogonale, allora $A^T A = A A^T = I$ ($A^{-1} = A^T$).
+    Pertanto $\| A \|_2 = \sqrt{\rho(I)} = 1$.
+    \item Si può dimostrare che, $\forall A \in \mathbb{R}^{m \times n}$:
+    $$ \| A \|_2 \le \sqrt{\| A \|_1 \cdot \| A \|_\infty} $$
+\end{enumerate}
+\end{osservazione}
+
+\textbf{N.B.} Siete tenuti a conoscere le norme $\| \cdot \|_1, \| \cdot \|_2$ e $\| \cdot \|_\infty$ su vettore e matrice.
+
+\paragraph{Compatibilità tra norma indotta su matrice e corrispondente norma su vettore}
+Per brevità, nel seguito omettiamo il pedice $p$ della norma, sottointendendo che sia sempre lo stesso.
+Si ottiene, pertanto, che per $\mathbf{x} \neq \mathbf{0}$:
+
+$$ \| A \mathbf{x} \| = \left\| A \frac{\mathbf{x}}{\| \mathbf{x} \|} \right\| \cdot \| \mathbf{x} \| \le \underbrace{\left( \sup_{\| \mathbf{v} \| = 1} \| A \mathbf{v} \| \right)}_{\| A \|} \cdot \| \mathbf{x} \| = \| A \| \cdot \| \mathbf{x} \| $$
+
+Pertanto, abbiamo concluso che:
+$$ \| A \mathbf{x} \| \le \| A \| \cdot \| \mathbf{x} \| \quad \text{(compatibilità della norma)} $$
+
+In modo analogo si dimostra che, se $A \in \mathbb{R}^{m \times n}, B \in \mathbb{R}^{n \times k}$:
+$$ \| A \cdot B \| \le \| A \| \cdot \| B \| $$
+
+\begin{osservazione}
+\begin{enumerate}
+    \item Se $A \in \mathbb{R}^{n \times n}$, $\forall \| \cdot \|$ norma indotta su matrice, vale: $\rho(A) \le \| A \|$.
+    \item $\forall \| \cdot \|$ norma indotta su matrice, vale:
+    $$ \| I \| = \max_{\|\mathbf{x}\|=1} \| I \mathbf{x} \| = \max_{\|\mathbf{x}\|=1} \| \mathbf{x} \| = 1 $$
+    \item Dalla 2) segue che, se $A \in \mathbb{R}^{n \times n}, \det(A) \neq 0$:
+    $$ \| A \| \cdot \| A^{-1} \| \ge \| A \cdot A^{-1} \| = \| I \| = 1 $$
+\end{enumerate}
+\end{osservazione}
+
+Ritorniamo, quindi, a discutere il problema perturbato \eqref{eq:perturbed}. A questo fine, supponiamo che:
+$$ \Delta A = \epsilon F, \quad \text{con } \epsilon \in \mathbb{R}, F \in \mathbb{R}^{n \times n} $$
+e, similmente,
+$$ \Delta \mathbf{b} = \epsilon \mathbf{f}, \quad \text{con } \mathbf{f} \in \mathbb{R}^n $$
+
+Definiamo, quindi:
+\begin{itemize}
+    \item $A(\epsilon) = A + \overbrace{\epsilon F}^{\Delta A} \implies A(0) = A$
+    \item $\mathbf{b}(\epsilon) = \mathbf{b} + \overbrace{\epsilon \mathbf{f}}^{\Delta \mathbf{b}} \implies \mathbf{b}(0) = \mathbf{b}$
+\end{itemize}
+e, inoltre, indichiamo con $\mathbf{x}(\epsilon)$ la soluzione del sistema lineare:
+\begin{equation} \label{eq:perturbed_param}
+    A(\epsilon) \mathbf{x}(\epsilon) = \mathbf{b}(\epsilon) \quad \iff \quad \eqref{eq:perturbed}
+\end{equation}
+
+Inoltre, da questo segue che:
+\begin{enumerate}
+    \item $\mathbf{x}(0) = \mathbf{x}$, soluzione di \eqref{eq:exact};
+    \item per $\epsilon \approx 0$,
+    $$ \mathbf{x}(\epsilon) = \mathbf{x}(0) + \epsilon \dot{\mathbf{x}}(0) + O(\epsilon^2) \approx \mathbf{x} + \epsilon \dot{\mathbf{x}}(0) $$
+    $$ \implies \Delta \mathbf{x} = \mathbf{x}(\epsilon) - \mathbf{x} \approx \epsilon \cdot \dot{\mathbf{x}}(0) $$
+\end{enumerate}
+Andiamo, pertanto, ad ottenere $\dot{\mathbf{x}}(0)$.
+
+Poiché la \eqref{eq:perturbed_param} vale identicamente in un intorno di $\epsilon = 0$, questo significa che anche le derivate prime dei 2 membri devono essere uguali:
+$$ \underbrace{\dot{A}(\epsilon)}_{F} \mathbf{x}(\epsilon) + A(\epsilon) \dot{\mathbf{x}}(\epsilon) = \underbrace{\dot{\mathbf{b}}(\epsilon)}_{\mathbf{f}} $$
+e, calcolando in $\epsilon = 0$, otteniamo:
+$$ F \underbrace{\mathbf{x}(0)}_{\mathbf{x}} + \underbrace{A(0)}_{A} \dot{\mathbf{x}}(0) = \mathbf{f} $$
+da cui:
+$$ F \mathbf{x} + A \dot{\mathbf{x}}(0) = \mathbf{f} $$
+e, moltiplicando membro a membro per $\epsilon$:
+$$ (\underbrace{\epsilon F}_{\Delta A}) \mathbf{x} + A \cdot (\underbrace{\epsilon \dot{\mathbf{x}}(0)}_{\Delta \mathbf{x}}) = (\underbrace{\epsilon \mathbf{f}}_{\Delta \mathbf{b}}) $$
+
+ovvero:
+\begin{equation} \label{eq:fund_relation}
+    \Delta A \cdot \mathbf{x} + A \cdot \Delta \mathbf{x} = \Delta \mathbf{b}
+\end{equation}
