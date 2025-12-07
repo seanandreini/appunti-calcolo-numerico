@@ -1799,3 +1799,199 @@ Pertanto, una soluzione corretta al problema può essere quella di scegliere
     \text{tol} = \underbrace{100}_{\text{multiplo scalare}} * \text{eps} * \underbrace{\text{norm}(a, 1)}_{\text{norma poco costosa}};
 \end{equation}
 (il multiplo può dipendere anche dalla dimensione $n$ del problema). \textbf{NO} $\| \cdot \|_2$.
+
+
+
+%lezione 3 dicembre
+\paragraph{Funzione cond}
+In Matlab la function \texttt{cond} calcola il numero di condizione di una matrice:
+\begin{itemize}
+    \item \texttt{cond(A)} $\rightarrow K(A)$ in norma 2
+    \item \texttt{cond(A, 1)} $\rightarrow K(A)$ in norma 1
+    \item ecc.
+\end{itemize}
+
+\subsection{Sistemi lineari sovradeterminati}
+Il problema è risolvere:
+\begin{equation} \label{eq:sovradet}
+    A\mathbf{x} = \mathbf{b}
+\end{equation}
+dove $A \in \mathbb{R}^{m \times n}$, con $m > n = \text{rank}(A)$ ($\implies \mathbf{b} \in \mathbb{R}^m$, $\mathbf{x} \in \mathbb{R}^n$).
+
+\paragraph{Piccola digressione (Deep Learning)}
+Nella \eqref{eq:sovradet}, $A$ e $\mathbf{b}$ sono i dati del problema, mentre $\mathbf{x}$ è la soluzione da determinare.
+Tuttavia, nelle applicazioni del deep-learning, i ruoli si capovolgono.
+Ad esempio, se ho una rete del tipo:
+
+% --- SCHEMA RETE NEURALE ---
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1.5]
+        % Input nodes
+        \node (x1) at (-0.5, 0.5) {$x_1$};
+        \node (x2) at (-0.5, -0.5) {$x_2$};
+        
+        % First layer nodes (circles)
+        \draw (0.5, 0.5) circle (2pt);
+        \draw (0.5, -0.5) circle (2pt);
+        \coordinate (n1) at (0.5, 0.5);
+        \coordinate (n2) at (0.5, -0.5);
+        
+        % Connections from input
+        \draw[->, thick] (x1) -- (n1);
+        \draw[->, thick] (x2) -- (n2);
+        
+        % Second layer nodes (circles) - more spread out like in the sketch
+        \draw (1.5, 1) circle (2pt);
+        \draw (1.5, 0) circle (2pt);
+        \draw (1.5, -1) circle (2pt);
+        \coordinate (h1) at (1.5, 1);
+        \coordinate (h2) at (1.5, 0);
+        \coordinate (h3) at (1.5, -1);
+        
+        % Connections Layer 1 -> Layer 2
+        \draw[thick] (n1) -- (h1);
+        \draw[thick] (n1) -- (h2);
+        \draw[thick] (n2) -- (h2);
+        \draw[thick] (n2) -- (h3);
+        
+        % Third layer nodes (circles) - converging back
+        \draw (2.5, 0.5) circle (2pt);
+        \draw (2.5, -0.5) circle (2pt);
+        \coordinate (o1) at (2.5, 0.5);
+        \coordinate (o2) at (2.5, -0.5);
+        
+        % Connections Layer 2 -> Layer 3
+        \draw[thick] (h1) -- (o1);
+        \draw[thick] (h2) -- (o1);
+        \draw[thick] (h2) -- (o2);
+        \draw[thick] (h3) -- (o2);
+        
+        % Output
+        \node (xn) at (3.5, 0) {$x_N$};
+        \draw[->, thick] (o1) -- (3.2, 0.5);
+        \draw[->, thick] (o2) -- (3.2, -0.5);
+        
+    \end{tikzpicture}
+    \end{figure}
+    % --- FINE SCHEMA ---
+
+tipicamente, se $\mathbf{x}_1 \in \mathbb{R}^{n_1}$ è il vettore degli input e $\mathbf{x}_N \in \mathbb{R}^{n_N}$ è il vettore con gli output, allora la rete si può formalizzare come:
+$$ \mathbf{x}_{i+1} = \sigma(A_i \mathbf{x}_i + \mathbf{b}_i), \quad i=1, \dots, N-1 $$
+dove $A_i \in \mathbb{R}^{n_{i+1} \times n_i}$, $\mathbf{b}_i \in \mathbb{R}^{n_{i+1}}$ e $\sigma$ è la funzione di attivazione.
+"Allenare" una rete consiste nel determinare le matrici $A_i$ ed i vettori $\mathbf{b}_i$.
+
+\paragraph{Ritornando al problema (1)}
+Dobbiamo capire, innanzitutto, cosa si intenda per soluzione del problema. Infatti $A\mathbf{x}$ denota, al variare di $\mathbf{x}$, vettori che si possono ottenere come combinazione lineare delle colonne di $A$. Ovvero, appartenenti al $\text{range}(A)$.
+La dimensione di questo spazio vettoriale è, in questo caso, $n$.
+Invece $\mathbf{b} \in \mathbb{R}^m$, e nel nostro caso $m > n$.
+
+Ad esempio, se $A = \begin{pmatrix} 1 & 0 \\ 1 & 1 \\ 1 & 0 \end{pmatrix}$, allora $\text{range}(A) = \left\{ \begin{pmatrix} x_1 \\ x_1+x_2 \\ x_1 \end{pmatrix} : x_1, x_2 \in \mathbb{R} \right\}$.
+Ma per esempio, $\mathbf{b} = \begin{pmatrix} 1 \\ 2 \\ 3 \end{pmatrix} \notin \text{range}(A)$.
+
+Quindi, la conclusione di questo argomento è che in senso classico, una soluzione non esiste, nel caso generale.
+L'idea è la seguente: dato $\mathbf{x} \in \mathbb{R}^n$, posso definire il \underline{vettore residuo} $\mathbf{r} = A\mathbf{x} - \mathbf{b}$.
+Chiaramente, se fosse $\mathbf{r} = \mathbf{0} \in \mathbb{R}^m$, allora questo significa che $\mathbf{0} = A\mathbf{x} - \mathbf{b}$, ovvero $A\mathbf{x} = \mathbf{b}$ è risolubile (\textbf{x} soluzione classica del problema).
+Viceversa, se non possiamo ottenere $\mathbf{r} = \mathbf{0}$, cerchiamo $\mathbf{x}$ tale che:
+\begin{equation} \label{eq:minimi_quadrati}
+    \| \mathbf{r} \|_2^2 = \| A\mathbf{x} - \mathbf{b} \|_2^2 = \min!
+\end{equation}
+\begin{osservazione}
+    $\mathbf{r} = (r_1, \dots, r_m)^T \implies \| \mathbf{r} \|_2^2 = \sum_{i=1}^m r_i^2 = \mathbf{r}^T \mathbf{r}$).
+\end{osservazione}
+Per questo motivo, la soluzione $\mathbf{x}$ che soddisfa la \eqref{eq:minimi_quadrati} prende il nome di \textbf{soluzione ai minimi quadrati} del sistema lineare $A\mathbf{x} = \mathbf{b}$.
+
+Preliminarmente, prima di procedere con la determinazione di $\mathbf{x}$, osserviamo che, se $Q \in \mathbb{R}^{m \times m}$ è una matrice ortogonale ($Q^T Q = Q Q^T = I$), allora:
+$$ \| Q \mathbf{r} \|_2^2 = (Q\mathbf{r})^T (Q\mathbf{r}) = \mathbf{r}^T Q^T Q \mathbf{r} = \mathbf{r}^T \mathbf{r} = \| \mathbf{r} \|_2^2 $$
+Pertanto, la norma euclidea di un vettore è invariata per moltiplicazione per una matrice ortogonale.
+
+Vale, inoltre, il seguente risultato.
+\begin{teorema}[Fattorizzazione QR]
+Se $A \in \mathbb{R}^{m \times n}$ con $m > n = \text{rank}(A)$, allora esistono:
+\begin{enumerate}
+    \item $Q \in \mathbb{R}^{m \times m}$ ortogonale;
+    \item $\tilde{R} \in \mathbb{R}^{m \times n}$ triangolare superiore e nonsingolare,
+\end{enumerate}
+tali che:
+$$ A = Q R, \quad \text{con } R = \begin{pmatrix} \tilde{R} \\ 0 \end{pmatrix} \in \mathbb{R}^{m \times n} \quad (\implies 0 \in \mathbb{R}^{(m-n) \times n}) $$
+\end{teorema}
+
+Utilizzando questo risultato, possiamo dimostrare il seguente corollario.
+\begin{corollario}
+Se $A \in \mathbb{R}^{m \times n}$, $m > n = \text{rank}(A)$, allora la soluzione ai minimi quadrati del sistema lineare $A\mathbf{x} = \mathbf{b}$ esiste ed è unica.
+\end{corollario}
+\begin{proof}
+    Vogliamo determinare $\mathbf{x}$ in modo da minimizzare:
+    \begin{align*}
+        \| \mathbf{r} \|_2^2 &= \| A\mathbf{x} - \mathbf{b} \|_2^2 \\
+        &= \| Q R \mathbf{x} - \mathbf{b} \|_2^2 \\
+        &= \| Q(R\mathbf{x} - Q^T\mathbf{b}) \|_2^2 \\
+        &= \| R\mathbf{x} - \underbrace{Q^T\mathbf{b}}_{\mathbf{g}} \|_2^2 \quad \text{(per invarianza ortogonale)}
+    \end{align*}
+    Posto $\mathbf{g} = Q^T \mathbf{b}$, partizioniamolo come $\mathbf{g} = \begin{pmatrix} \mathbf{g}_1 \\ \mathbf{g}_2 \end{pmatrix}$, con $\mathbf{g}_1 \in \mathbb{R}^n$ e $\mathbf{g}_2 \in \mathbb{R}^{m-n}$.
+    Allora:
+    \begin{align*}
+        \| R\mathbf{x} - \mathbf{g} \|_2^2 &= \left\| \begin{pmatrix} \hat{R} \\ 0 \end{pmatrix} \mathbf{x} - \begin{pmatrix} \mathbf{g}_1 \\ \mathbf{g}_2 \end{pmatrix} \right\|_2^2 \\
+        &= \left\| \begin{pmatrix} \hat{R}\mathbf{x} - \mathbf{g}_1 \\ -\mathbf{g}_2 \end{pmatrix} \right\|_2^2 \\
+        &= \begin{pmatrix} \hat{R}\mathbf{x} - \mathbf{g}_1 \\ -\mathbf{g}_2 \end{pmatrix}^T \begin{pmatrix} \hat{R}\mathbf{x} - \mathbf{g}_1 \\ -\mathbf{g}_2 \end{pmatrix} \\
+        &= (\hat{R}\mathbf{x} - \mathbf{g}_1)^T (\hat{R}\mathbf{x} - \mathbf{g}_1) + \mathbf{g}_2^T \mathbf{g}_2 \\
+        &= \| \hat{R}\mathbf{x} - \mathbf{g}_1 \|_2^2 + \| \mathbf{g}_2 \|_2^2
+    \end{align*}
+    Questa quantità assume il suo valore minimo (che è $\| \mathbf{g}_2 \|_2^2$) se e solo se:
+    $$ \| \hat{R}\mathbf{x} - \mathbf{g}_1 \|_2^2 = 0 \iff \hat{R}\mathbf{x} - \mathbf{g}_1 = \mathbf{0} \iff \hat{R}\mathbf{x} = \mathbf{g}_1 $$
+    Poiché $\hat{R}$ è triangolare superiore e nonsingolare, la soluzione di questo sistema lineare esiste ed è unica.
+    Il residuo minimo vale $\| \mathbf{r} \|_2 = \| \mathbf{g}_2 \|_2$.
+    \end{proof}
+
+\begin{osservazione}
+\begin{enumerate}
+    \item Per calcolare $\mathbf{x}$ è sufficiente conoscere il fattore $\hat{R}$ e poter fare il prodotto $Q^T \mathbf{b}$ per calcolare $\mathbf{g}$.
+    \item Una volta calcolato $\mathbf{x}$, per calcolare la norma di $\mathbf{r} = A\mathbf{x} - \mathbf{b}$, non è necessario calcolare il residuo stesso. Infatti $\| \mathbf{r} \|_2 = \| \mathbf{g}_2 \|_2$, e il vettore $\mathbf{g}$ (quindi $\mathbf{g}_2$) lo abbiamo già calcolato.
+\end{enumerate}
+\end{osservazione}
+
+\subsubsection{Matrici di Householder}
+Per dotarci del mattoncino elementare per il calcolo della fattorizzazione QR di $A$, consideriamo il seguente problema: dato $\mathbf{x} \in \mathbb{R}^n, \mathbf{x} \neq \mathbf{0}$, vogliamo determinare una matrice ortogonale $H \in \mathbb{R}^{n \times n}$ tale che:
+\begin{equation} \label{eq:householder_prob}
+    H \mathbf{x} = \alpha \mathbf{e}_1
+\end{equation}
+dove $\mathbf{e}_1 \in \mathbb{R}^n$ è il primo versore.
+Osserviamo che poiché $H$ è ortogonale:
+$$ \| H \mathbf{x} \|_2^2 = \| \alpha \mathbf{e}_1 \|_2^2 = \alpha^2 \mathbf{e}_1^T \mathbf{e}_1 = \alpha^2 $$
+D'altra parte $\| H \mathbf{x} \|_2^2 = \| \mathbf{x} \|_2^2$. Segue che $\alpha = \pm \| \mathbf{x} \|_2$.
+
+Riguardo ad $H$, la definiamo nella forma:
+$$ H = I - \frac{2}{\mathbf{v}^T \mathbf{v}} \mathbf{v} \mathbf{v}^T $$
+con $\mathbf{v} \in \mathbb{R}^n $ da determinare.
+Osserviamo che:
+\begin{enumerate}
+    \item $H = H^T$ (simmetria);
+    \item $H$ è ortogonale. Infatti:
+    \begin{align*}
+        H^T H = H \cdot H &= \left( I - \frac{2}{\mathbf{v}^T \mathbf{v}} \mathbf{v} \mathbf{v}^T \right) \left( I - \frac{2}{\mathbf{v}^T \mathbf{v}} \mathbf{v} \mathbf{v}^T \right) \\
+        &= I - \frac{4}{\mathbf{v}^T \mathbf{v}} \mathbf{v} \mathbf{v}^T + \frac{4}{(\mathbf{v}^T \mathbf{v})^2} \mathbf{v} (\mathbf{v}^T \mathbf{v}) \mathbf{v}^T \\
+        &= I - \frac{4}{\mathbf{v}^T \mathbf{v}} \mathbf{v} \mathbf{v}^T + \frac{4}{\mathbf{v}^T \mathbf{v}} \mathbf{v} \mathbf{v}^T = I
+    \end{align*}
+\end{enumerate}
+Quindi, qualunque sia la scelta di $\mathbf{v}$, la matrice $H$ è simmetrica e ortogonale.
+Il problema è quindi scegliere $\mathbf{v}$ in modo che la \eqref{eq:householder_prob} sia soddisfatta.
+Verifichiamo che questo è vero se scegliamo:
+$$ \mathbf{v} = \mathbf{x} - \alpha \mathbf{e}_1 $$
+Infatti:
+\begin{align*}
+    H \mathbf{x} &= \left( I - \frac{2}{\mathbf{v}^T \mathbf{v}} \mathbf{v} \mathbf{v}^T \right) \mathbf{x} \\
+    &= \mathbf{x} - \frac{2}{\mathbf{v}^T \mathbf{v}} \mathbf{v} (\mathbf{v}^T \mathbf{x}) \\
+    &= \mathbf{x} - \frac{2 \mathbf{v}^T \mathbf{x}}{\mathbf{v}^T \mathbf{v}} \mathbf{v} \\
+    &= \mathbf{x} - \frac{2 \mathbf{v}^T \mathbf{x}}{\mathbf{v}^T \mathbf{v}} (\mathbf{x} - \alpha \mathbf{e}_1) \\
+    &= \left( 1 - \frac{2 \mathbf{v}^T \mathbf{x}}{\mathbf{v}^T \mathbf{v}} \right) \mathbf{x} + \alpha \left( \frac{2 \mathbf{v}^T \mathbf{x}}{\mathbf{v}^T \mathbf{v}} \right) \mathbf{e}_1
+\end{align*}
+Il risultato sarà $\alpha \mathbf{e}_1$ se $\frac{2 \mathbf{v}^T \mathbf{x}}{\mathbf{v}^T \mathbf{v}} = 1$, ovvero se $2 \mathbf{v}^T \mathbf{x} = \mathbf{v}^T \mathbf{v}$.
+
+Infatti:
+$$ 2 \mathbf{v}^T \mathbf{x} = 2(\mathbf{x} - \alpha \mathbf{e}_1)^T \mathbf{x} = 2(\mathbf{x}^T \mathbf{x} - \alpha \mathbf{e}_1^T \mathbf{x}) = 2(\|\mathbf{x}\|_2^2 - \alpha x_1) = 2\alpha^2 - 2\alpha x_1 $$
+$$ \mathbf{v}^T \mathbf{v} = (\mathbf{x} - \alpha \mathbf{e}_1)^T (\mathbf{x} - \alpha \mathbf{e}_1) = \mathbf{x}^T \mathbf{x} + \alpha^2 - 2\alpha \mathbf{e}_1^T \mathbf{x} = 2\alpha^2 - 2\alpha x_1 $$
+Pertanto è verificato l'asserto.
+
+Riguardo al segno di $\alpha$, osserviamo che $\mathbf{v} = \mathbf{x} - \alpha \mathbf{e}_1 = (x_1 - \alpha, x_2, \dots, x_n)^T$.
+Quindi $\alpha$ viene sottratto a $x_1$. Per ottenere un'operazione ben condizionata, $\alpha$ e $-x_1$ devono essere concordi , e pertanto il segno di $\alpha$ deve essere opposto a quello di $x_1$.
+
