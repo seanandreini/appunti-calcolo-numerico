@@ -1661,3 +1661,141 @@ ovvero:
 \begin{equation} \label{eq:fund_relation}
     \Delta A \cdot \mathbf{x} + A \cdot \Delta \mathbf{x} = \Delta \mathbf{b}
 \end{equation}
+
+
+%lezione 2 dicembre
+
+Da questa vogliamo ricavare una relazione scalare (alias, un numero) che quantifica $\Delta\mathbf{x}$ in funzione di $\Delta A$ e $\Delta\mathbf{b}$, per ottenere una relazione più compatta tra loro.
+
+Dalla (19) otteniamo che:
+$$ A \cdot \Delta\mathbf{x} = \Delta\mathbf{b} - \Delta A \cdot \mathbf{x} $$
+$$ \Delta\mathbf{x} = A^{-1}(\Delta\mathbf{b} - \Delta A \cdot \mathbf{x}) $$
+\begin{align*}
+    \| \Delta\mathbf{x} \| &= \| A^{-1}(\Delta\mathbf{b} - \Delta A \cdot \mathbf{x}) \| \\
+    &\le \| A^{-1} \| \cdot \| \Delta\mathbf{b} - \Delta A \cdot \mathbf{x} \| \\
+    &\le \| A^{-1} \| \cdot (\| \Delta\mathbf{b} \| + \| \Delta A \cdot \mathbf{x} \|) \\
+    &\le \| A^{-1} \| \cdot (\| \Delta\mathbf{b} \| + \| \Delta A \| \cdot \| \mathbf{x} \|)
+\end{align*}
+Dividendo per $\| \mathbf{x} \|$, moltiplicando e dividendo per $\| A\|$, otteniamo quindi:
+\begin{equation} \label{eq:stima_err1}
+    \frac{\| \Delta\mathbf{x} \|}{\| \mathbf{x} \|} \le \| A^{-1} \| \left( \frac{\| \Delta\mathbf{b} \|}{\| \mathbf{x} \|} + \| \Delta A \| \right) = \| A \| \cdot \| A^{-1} \| \left( \frac{\| \Delta\mathbf{b} \|}{\| A \| \cdot \| \mathbf{x} \|} + \frac{\| \Delta A \|}{\| A \|} \right)
+\end{equation}
+A questo punto, osserviamo che:
+$$ \mathbf{b} = A\mathbf{x} \implies \| \mathbf{b} \| = \| A\mathbf{x} \| \le \| A \| \cdot \| \mathbf{x} \| \implies \frac{1}{\| \mathbf{b} \|} \ge \frac{1}{\| A \| \cdot \| \mathbf{x} \|} $$
+Pertanto, possiamo maggiorare:
+$$ \frac{\| \Delta\mathbf{b} \|}{\| A \| \cdot \| \mathbf{x} \|} \le \frac{\| \Delta\mathbf{b} \|}{\| \mathbf{b} \|} $$
+In conclusione, otteniamo quindi che:
+\begin{equation} \label{eq:condizionamento}
+    \frac{\| \Delta\mathbf{x} \|}{\| \mathbf{x} \|} \le \| A \| \cdot \| A^{-1} \| \left( \frac{\| \Delta\mathbf{b} \|}{\| \mathbf{b} \|} + \frac{\| \Delta A \|}{\| A \|} \right)
+\end{equation}
+In questa disuguaglianza:
+\begin{itemize}
+    \item $\frac{\| \Delta\mathbf{x} \|}{\| \mathbf{x} \|}$ può essere assimilato ad una "sorta di errore relativo" sul risultato.
+    \item Analogamente, $\frac{\| \Delta\mathbf{b} \|}{\| \mathbf{b} \|}$ e $\frac{\| \Delta A \|}{\| A \|}$ possono essere assimilati, rispettivamente, ad un errore relativo sul termine noto e sulla matrice dei coefficienti.
+\end{itemize}
+Da quanto esposto, la quantità $K(A) = \| A \| \cdot \| A^{-1} \|$ definisce il numero di condizione del problema.
+
+\begin{definition}[Numero di Condizione]
+$K(A) = \| A \| \cdot \| A^{-1} \|$ si dice \textbf{numero di condizione} della matrice $A$.
+\end{definition}
+\begin{itemize}
+    \item Se $K(A) \gg 1$, diremo che $A$ è \textbf{mal condizionata}.
+    \item Viceversa, se $K(A) = O(1)$, diremo che $A$ è \textbf{ben condizionata}.
+\end{itemize}
+
+\begin{osservazione}
+\begin{enumerate}
+    \item $K(A) = \| A \| \cdot \| A^{-1} \| \ge \| A \cdot A^{-1} \| = \| I \| = 1$ (per ogni norma indotta su matrice).
+    \item Se $A$ è ortogonale, allora $A^T = A^{-1}$ e $\| A \|_2=1$. Pertanto:
+    $$ K_2(A) = \| A \|_2 \cdot \| A^{-1} \|_2 = \| A \|_2 \cdot \| A^T \|_2 = 1 \cdot 1 = 1 $$
+    Quindi una matrice ortogonale è sempre ben condizionata.
+\end{enumerate}
+\end{osservazione}
+
+\subsubsection{Esempi rivisitati}
+Alla luce di questa analisi, rivisitiamo gli esempi visti nelle precedenti pagine.
+
+\paragraph{Esempio 1 (Matrice bidiagonale)}
+Per l'esempio in cui:
+$$ A = \begin{pmatrix} 1 & & \\ 100 & \ddots \\ & \ddots & \ddots \\ & & 100& 1 \end{pmatrix} \in \mathbb{R}^{10 \times 10} $$
+si vede facilmente che utilizzando $\| \cdot \|_\infty$ o $\| \cdot \|_1$, $K(A) \approx 10^{20}$.
+Osserviamo che se utilizziamo un'aritmetica finita con precisione di macchina $n$, allora $\frac{\| \Delta\mathbf{b} \|}{\| \mathbf{b} \|} + \frac{\| \Delta A \|}{\| A \|} \ge n$ in generale.
+Pertanto, se $K(A) \approx n^{-1}$, allora il secondo membro della \eqref{eq:condizionamento} può arrivare a 1, il che significa totale perdita di informazione.
+
+\begin{osservazione}
+Nel caso di sistemi molto mal condizionati, la soluzione del sistema lineare va ricercata in altre forme.
+\end{osservazione}
+
+\paragraph{Esempio 2 (Matrice con $\epsilon$)}
+Un altro esempio che abbiamo visto riguardava la fattorizzazione LU della matrice:
+$$ 
+A = 
+\begin{pmatrix} 
+\epsilon & 9 & 1 & & & \\
+9 & 1 & 0 & & & \\
+& 1 & 9 & 1 & & \\
+& & \ddots & \ddots & \ddots & \\
+& & &  & & 1 \\
+& & & & 1 & 9
+\end{pmatrix} \in \mathbb{R}^{8 \times 8}, \quad \epsilon = 10^{-15}
+$$
+In questo caso, $K(A) = O(1)$.
+Se utilizzo la fattorizzazione con pivoting, $PA=LU$, con $P$ ortogonale ($K_2(P)=1$), otteniamo che i fattori $L$ e $U$ hanno numero di condizione dell'ordine di 10. Pertanto, sono ben condizionati.
+
+Se, invece, non si utilizza il pivoting, allora
+$$ A = L_1 U_1, \quad \text{con } K(L_1) \approx 10^{33}, \quad K(U_1) \approx 10^{33}! $$
+Quindi, i fattori sono molto malcondizionati, sebbene $A$ sia ben condizionata.
+\subsubsection{Calcolo Efficiente del Numero di Condizione}
+Vediamo come utilizzare le norme su matrice per ottenere una implementazione più efficiente della fattorizzazione LU con pivoting.
+Ricordiamo che, se $A \in \mathbb{R}^{n \times n}$, allora possiamo scrivere uno pseudo-codice che la implementa, come segue:
+
+\begin{lstlisting}[language=matlab, frame=none, numbers=none]
+p = 1:n;
+for i = 1:n
+    [mi, ki] = max(abs(a(i:n, i)));
+    
+    if mi == 0, error('A singolare'), end % Controllo "ingenuo"
+    
+    ki = ki + i - 1;
+    if ki > i
+        p([i, ki]) = p([ki, i]);
+        a([i, ki], :) = a([ki, i], :);
+    end
+    
+    a(i+1:n, i) = a(i+1:n, i) / a(i,i);
+    a(i+1:n, i+1:n) = a(i+1:n, i+1:n) - ...
+                      a(i+1:n, i) * a(i, i+1:n);
+end
+\end{lstlisting}
+
+Fermo restando il resto, vogliamo implementare un controllo più robusto per diagnosticare la "singolarità" della matrice, rispetto al controllo \texttt{if mi == 0}, che è decisamente "ingenuo".
+
+Un primo rimedio potrebbe essere un controllo del tipo:
+\begin{lstlisting}[language=matlab, frame=none, numbers=none]
+if mi <= tol
+\end{lstlisting}
+con \texttt{tol} tolleranza da specificare.
+
+Per capire come scegliere \texttt{tol}, consideriamo il seguente esempio:
+\begin{equation} \label{eq:esempio_diag_dom}
+    \begin{bmatrix} 10 & 1 \\ 1 & 10 \end{bmatrix} 
+    \begin{bmatrix} x_1 \\ x_2 \end{bmatrix} = 
+    \begin{bmatrix} 11 \\ 11 \end{bmatrix}
+\end{equation}
+in cui:
+\begin{enumerate}
+    \item La matrice è diagonale dominante. Quindi fattorizzabile LU;
+    \item la soluzione è $x_1 = x_2 = 1$.
+\end{enumerate}
+
+Se \texttt{eps} è la precisione di macchina, sembrerebbe ragionevole il controllo:
+\begin{lstlisting}[language=matlab, frame=none, numbers=none]
+if mi <= eps
+\end{lstlisting}
+
+Tuttavia, se moltiplichiamo membro a membro la \eqref{eq:esempio_diag_dom} per \verb|eps/10^4|, otteniamo che la matrice viene diagnosticata come singolare ma, non di meno, la matrice dei coefficienti rimane sempre diagonale dominante, e la soluzione $x_1 = x_2 = 1$.
+Pertanto, una soluzione corretta al problema può essere quella di scegliere
+\begin{equation} \label{eq:tol_robusta}
+    \text{tol} = \underbrace{100}_{\text{multiplo scalare}} * \text{eps} * \underbrace{\text{norm}(a, 1)}_{\text{norma poco costosa}};
+\end{equation}
+(il multiplo può dipendere anche dalla dimensione $n$ del problema). \textbf{NO} $\| \cdot \|_2$.
