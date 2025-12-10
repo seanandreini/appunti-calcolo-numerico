@@ -2126,7 +2126,7 @@ Inoltre, nella \eqref{eq:x<-Hi}, osserviamo che:
 \end{itemize}
 
 
-\subsection{Pseudo-codice Matlab}
+\subsubsection{Pseudo-codice Matlab}
 Riassumiamo tutto questo nel seguente pseudo-codice che sovrascrive $A \in \mathbb{R}^{m \times n}$ con l'informazione dei fattori $Q$ e $R$ (posizione significativa dei vettori di Householder normalizzati a porzione triangolare di R).
 
 \begin{lstlisting}[language=Matlab, frame=none, numbers=none]
@@ -2149,3 +2149,114 @@ for i = 1:n
        ([1; A(i+1:m, i)]' * A(i:m, i+1:n));
 end
 \end{lstlisting}
+
+
+
+
+
+%lezione 10 dicembre
+\subsubsection*{Dettagli sulla scelta di $\beta$}
+Se $\hat{\mathbf{v}} = \frac{\mathbf{v}}{v_1} = \frac{\mathbf{x} - \alpha \mathbf{e}_1}{x_1 - \alpha}$ (con prima componente normalizzata a 1), allora il coefficiente $\beta$ si calcola come:
+$$ \beta = \frac{2}{\hat{\mathbf{v}}^T \hat{\mathbf{v}}} = \dots = -\frac{v_1}{\alpha} $$
+come visto nelle sezioni precedenti.
+
+\subsubsection*{Aggiornamento della sottomatrice}
+L'operazione chiave all'interno del ciclo è l'aggiornamento della porzione di interesse della matrice:
+$$ H \text{A} = (I - \beta \hat{\mathbf{v}} \hat{\mathbf{v}}^T) \text{A} = \text{A} - (\beta \hat{\mathbf{v}}) (\hat{\mathbf{v}}^T \text{A}) $$
+dove $\hat{\mathbf{v}}$ è il vettore normalizzato (con 1 in testa).
+Questi accorgimenti consentono di ottenere un costo, in termini di operazioni algebriche elementari, di:
+$$ \approx \frac{2}{3}n^2(3m - n) \text{ flops}. $$
+
+\begin{osservazione}
+Si potrebbe utilizzare la fattorizzazione $A=QR$ anche nel caso $A \in \mathbb{R}^{n \times n}$ (quadrata), sotto l'ipotesi che $A$ sia non singolare.
+Tuttavia, se $m=n$, il costo per ottenere la fattorizzazione $A=QR$ sarebbe $\approx \frac{4}{3}n^3$ flops, ovvero il doppio rispetto a quello della fattorizzazione LU con pivoting ($\frac{2}{3}n^3$).
+Pertanto, quest'ultimo è quello di elezione nel caso quadrato.
+\end{osservazione}
+
+\subsection{Cenni sulla risoluzione di sistemi di equazioni non lineari}
+
+Rammentiamo che, nel caso scalare $f(x)=0$ con $f: \mathbb{R} \to \mathbb{R}$, abbiamo esaminato tra gli altri:
+\begin{enumerate}
+    \item \textbf{Metodo di Newton:}
+    $$ x_{i+1} = x_i - \frac{f(x_i)}{f'(x_i)}, \quad i=0,1,\dots $$
+    \item \textbf{Metodo delle corde:}
+    $$ x_{i+1} = x_i - \frac{f(x_i)}{f'(x_0)} $$
+\end{enumerate}
+Entrambi con convergenza locale e con ordine quadratico (Newton) e lineare (Corde) verso radici semplici 
+
+\begin{osservazione}
+    Se $x^*$ è radice semplice, allora $f(x^*)=0 \wedge f'(x^*) \neq 0$.
+\end{osservazione}
+
+
+\subsubsection{Generalizzazione a sistemi}
+Per generalizzare il metodo di Newton al caso di sistemi, riscriviamo formalmente l'iterazione scalare come:
+$$ x_{i+1} = x_i - f'(x_i)^{-1} f(x_i) \text{  con $i$ = 0,1,.....}$$ 
+
+Supponiamo ora di voler risolvere il sistema di $n$ equazioni non lineari nelle $n$ incognite $\mathbf{x} = (x_1, \dots, x_n)^T \in \mathbb{R}^n$:
+\begin{equation} \label{eq:sis_nonlin}
+    F(\mathbf{x}) = \mathbf{0} \in \mathbb{R}^n
+\end{equation}
+dove $F: \mathbb{R}^n \to \mathbb{R}^n$.
+Definendo le funzioni componenti di $F(\mathbf{x})$ come $f_i: \mathbb{R}^n \to \mathbb{R}$, possiamo riscrivere il sistema come:
+$$ \begin{cases} f_1(\mathbf{x}) = 0 \\ \vdots \\ f_n(\mathbf{x}) = 0 \end{cases} $$
+
+\begin{osservazione}
+    Se $\mathbf{e}_i \in \mathbb{R}^n$ è l'i-esimo versore, $f_i(\mathbf{x}) = \mathbf{e}_i^T F(\mathbf{x})$.
+\end{osservazione}
+
+
+Dato $\mathbf{x}^0 \in \mathbb{R}^n$, possiamo considerare una approssimazione lineare di $F(\mathbf{x})$ in un intorno di $\mathbf{x}^0$:
+\begin{equation} \label{eq:linearizzazione}
+    F(\mathbf{x}) \approx F(\mathbf{x}^0) + F'(\mathbf{x}^0)(\mathbf{x} - \mathbf{x}^0)
+\end{equation}
+dove $F'(\mathbf{x}^0)$ è la \textbf{matrice Jacobiana} di $F(\mathbf{x})$ calcolata in $\mathbf{x}^0$.
+Questa è così definita come $F'(\mathbf{x}) \in \mathbb{R}^{n \times n}$ il cui elemento $(i,j)$ è dato dalla derivata parziale di $f_i(\mathbf{x})$ rispetto alla componente $x_j$:
+$$ (F'(\mathbf{x}))_{ij} = \frac{\partial}{\partial x_j} f_i(\mathbf{x}) = \lim_{\epsilon \to 0} \frac{f_i(\mathbf{x} + \epsilon \mathbf{e}_j) - f_i(\mathbf{x})}{\epsilon} $$
+
+Imponendo che il secondo membro della \eqref{eq:linearizzazione} si annulli, otteniamo:
+$$ F(\mathbf{x}^0) + F'(\mathbf{x}^0)(\mathbf{x} - \mathbf{x}^0) = \mathbf{0} $$
+Supponendo $F'(\mathbf{x}^0)$ non singolare:
+$$ \mathbf{x}^1 = \mathbf{x}^0 - (F'(\mathbf{x}^0))^{-1} F(\mathbf{x}^0) $$
+
+\subsubsection{Metodo di Newton per sistemi}
+Reiterando il procedimento, si ottiene il Metodo di Newton:
+\begin{equation} \label{eq:newton_sis}
+    \mathbf{x}^{i+1} = \mathbf{x}^i - (F'(\mathbf{x}^i))^{-1} F(\mathbf{x}^i), \quad i=0,1,\dots
+\end{equation}
+
+\begin{esempio}
+Se $F: \mathbb{R}^2 \to \mathbb{R}^2$ è definita come:
+$$ F(\mathbf{x}) = \begin{pmatrix} \cos(x_1) + e^{x_2} \\ \sin(x_1) + 7x_2^2 \end{pmatrix}, \quad \mathbf{x} = \begin{pmatrix} x_1 \\ x_2 \end{pmatrix} $$
+allora la matrice Jacobiana è:
+$$ F'(\mathbf{x}) = \begin{bmatrix} -\sin(x_1) & e^{x_2} \\ \cos(x_1) & 14x_2 \end{bmatrix} $$
+\end{esempio}
+
+\begin{osservazione}
+L'iterazione \eqref{eq:newton_sis} può essere equivalentemente formulata come:
+\begin{enumerate}
+    \item Risolvi il sistema lineare: $F'(\mathbf{x}^i) \Delta \mathbf{x}^i = -F(\mathbf{x}^i)$
+    \item Aggiorna: $\mathbf{x}^{i+1} = \mathbf{x}^i + \Delta \mathbf{x}^i$
+\end{enumerate}
+Pertanto, il costo computazionale per iterazione consisterà in:
+\begin{enumerate}
+    \item Calcolo di $F(\mathbf{x}^i)$ e $F'(\mathbf{x}^i)$ (costoso);
+    \item Fattorizzazione di $F'(\mathbf{x}^i)$ ($2/3 n^3$ flops);
+    \item Risoluzione del sistema lineare ($2n^2$ flops);
+    \item Aggiornamento approssimazione ($n$ flops).
+\end{enumerate}
+\end{osservazione}
+
+\subsubsection{Metodo delle Corde (Newton Modificato)}
+Al fine di ridurre il costo relativo al calcolo e alla fattorizzazione della Jacobiana, è possibile utilizzare la versione vettoriale del metodo delle corde:
+\begin{enumerate}
+    \item Risolvi: $F'(\mathbf{x}^0) \Delta \mathbf{x}^i = -F(\mathbf{x}^i)$
+    \item Aggiorna: $\mathbf{x}^{i+1} = \mathbf{x}^i + \Delta \mathbf{x}^i$
+\end{enumerate}
+In questo caso, la matrice Jacobiana $F'(\mathbf{x}^0)$ si calcola e si fattorizza \textbf{solo una volta}.
+Per questo motivo, sebbene questa iterazione converga più lentamente di quella di Newton (ordine lineare invece che quadratico), ha un costo globale generalmente inferiore.
+
+\paragraph{Criterio di arresto}
+Come ogni procedimento iterativo, necessita di un idoneo criterio di arresto. Nel presente caso, un criterio molto utilizzato è basato sulla norma dell'incremento:
+$$ \left\| \Delta \mathbf{x}_i / (1 + |\mathbf{x}_i|) \right\|_\infty \le \text{tol} $$
+dove il termine $(1+|\mathbf{x}_i|)$ è un vettore con i valori assoluti della approssimazione corrente, e $\text{tol}$ è un'opportuna tolleranza.
