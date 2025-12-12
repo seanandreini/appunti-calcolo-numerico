@@ -1910,10 +1910,10 @@ Vale, inoltre, il seguente risultato.
 Se $A \in \mathbb{R}^{m \times n}$ con $m > n = \text{rank}(A)$, allora esistono:
 \begin{enumerate}
     \item $Q \in \mathbb{R}^{m \times m}$ ortogonale;
-    \item $\tilde{R} \in \mathbb{R}^{m \times n}$ triangolare superiore e nonsingolare,
+    \item $\hat{R} \in \mathbb{R}^{m \times n}$ triangolare superiore e nonsingolare,
 \end{enumerate}
 tali che:
-$$ A = Q R, \quad \text{con } R = \begin{pmatrix} \tilde{R} \\ 0 \end{pmatrix} \in \mathbb{R}^{m \times n} \quad (\implies 0 \in \mathbb{R}^{(m-n) \times n}) $$
+$$ A = Q R, \quad \text{con } R = \begin{pmatrix} \hat{R} \\ 0 \end{pmatrix} \in \mathbb{R}^{m \times n} \quad (\implies 0 \in \mathbb{R}^{(m-n) \times n}) $$
 \end{teorema}
 
 Utilizzando questo risultato, possiamo dimostrare il seguente corollario.
@@ -1961,7 +1961,10 @@ $$ \| H \mathbf{x} \|_2^2 = \| \alpha \mathbf{e}_1 \|_2^2 = \alpha^2 \mathbf{e}_
 D'altra parte $\| H \mathbf{x} \|_2^2 = \| \mathbf{x} \|_2^2$. Segue che $\alpha = \pm \| \mathbf{x} \|_2$.
 
 Riguardo ad $H$, la definiamo nella forma:
-$$ H = I - \frac{2}{\mathbf{v}^T \mathbf{v}} \mathbf{v} \mathbf{v}^T $$
+\begin{equation} \label{eq:householder_prob2}
+    H = I - \frac{2}{\mathbf{v}^T \mathbf{v}} \mathbf{v} \mathbf{v}^T 
+\end{equation}
+
 con $\mathbf{v} \in \mathbb{R}^n $ da determinare.
 Osserviamo che:
 \begin{enumerate}
@@ -1995,3 +1998,265 @@ Pertanto è verificato l'asserto.
 Riguardo al segno di $\alpha$, osserviamo che $\mathbf{v} = \mathbf{x} - \alpha \mathbf{e}_1 = (x_1 - \alpha, x_2, \dots, x_n)^T$.
 Quindi $\alpha$ viene sottratto a $x_1$. Per ottenere un'operazione ben condizionata, $\alpha$ e $-x_1$ devono essere concordi , e pertanto il segno di $\alpha$ deve essere opposto a quello di $x_1$.
 
+
+
+
+%lezione 9 dicembre
+% Memo: 1) leggere l'Appendice A1; 2) iscriversi all'esonero se non fatto (necessario).
+
+
+$$ \mathbf{v} = \mathbf{x} - \alpha \mathbf{e}_1 = \begin{pmatrix} x_1 - \alpha \\ x_2 \\ \vdots \\ x_n \end{pmatrix} \implies \text{sign}(\alpha) = -\text{sign}(x_1) $$
+Questa scelta del segno ha, oltre a garantire che l'operazione $x_1 - \alpha$ sia ben condizionata, ha anche la conseguenza di ottenere che la prima componente del vettore $\mathbf{v}$ sia sempre diversa da zero. In effetti, otteniamo che  $v_1 = x_1 - \alpha$ è la componente di massimo modulo del vettore $\mathbf{v}$. 
+Questo permette di ottimizzare lo spazio di memoria per memorizzare $\mathbf{v}$.
+
+Per comprendere meglio, vediamo qual è la matrice di Householder definita dal vettore $\hat{\mathbf{v}} = \beta \mathbf{v}$ con $\beta \neq 0$ scalare qualunque.
+Avremo:
+$$ I - \frac{2}{\hat{\mathbf{v}}^T \hat{\mathbf{v}}} \hat{\mathbf{v}} \hat{\mathbf{v}}^T = I - \frac{2}{\beta^2 \mathbf{v}^T \mathbf{v}} \beta^2 \mathbf{v} \mathbf{v}^T = H $$
+come visto nella \eqref{eq:householder_prob2}. Possiamo quindi concludere che:
+\begin{enumerate}
+    \item L'informazione per ottenere $H$ si riduce all'informazione relativa a $\mathbf{v}$;
+    \item L'informazione relativa a $\mathbf{v}$ stessa si riduce ad avere il vettore $\hat{\mathbf{v}} = \frac{\mathbf{v}}{v_1}$ la cui prima componente è 1.
+\end{enumerate}
+Quindi l'informazione di $H \in \mathbb{R}^{n \times n}$ si può non essere memorizzata esplicitamente, ma si riduce ad un vettore di lunghezza $n-1$ (le componenti di $\hat{\mathbf{v}}$ dalla seconda in poi).
+
+\subsubsection{Algoritmo di Fattorizzazione QR (di Householder)}
+Possiamo quindi dimostrare che la fattorizzazione $A=QR$ esiste. La dimostrazione è costruttiva e definisce il corrispondente algoritmo di fattorizzazione.
+Analogamente a quanto fatto per la fattorizzazione LU, si tratta di un metodo semi-iterativo che, in $n$ passi, ottiene la fattorizzazione (ovvero, diagnostica che $A$ non ha rango massimo).
+
+La matrice al passo $k$ sarà denotata con $A^{(k)} = (a_{ij}^{(k)}) \in \mathbb{R}^{m \times n}$. L'indice superiore denota l'ultimo passo dell'algoritmo in cui l'elemento è stato modificato.
+Si parte con:
+\begin{equation} \label{eq:matrice_A0}
+     \qquad
+    A = 
+    \begin{bmatrix}
+    a_{11}^{(0)} & a_{12}^{(0)} & a_{13}^{(0)} & \dots & a_{1n}^{(0)} \\
+    a_{21}^{(0)} & a_{22}^{(0)} & a_{23}^{(0)} & \dots & a_{2n}^{(0)} \\
+    \vdots & \vdots & \vdots & & \vdots \\
+    \vdots & \vdots & \vdots & & \vdots \\
+    a_{n1}^{(0)} & a_{n2}^{(0)} & a_{n3}^{(0)} & \dots & a_{nn}^{(0)}
+    \end{bmatrix}
+    \equiv A^{(0)}.
+    \end{equation}
+
+\paragraph{Passo 1:}
+All'i-esimo passo, l'obiettivo sarà quello di trasformare la $i$-esima colonna della matrice corrente nella $i$-esima colonna di una matrice triangolare superiore.
+Al passo 1, possiamo definire una matrice elementare di Householder $H_1 \in \mathbb{R}^{m \times n}$ tale che:
+$$ H_1 \begin{pmatrix} a_{11}^{(0)} \\ \vdots \\ a_{m1}^{(0)} \end{pmatrix} = \begin{pmatrix} a_{11}^{(1)} \\ 0 \\ \vdots \\ 0 \end{pmatrix} $$
+con $a_{11} \neq 0$, se la prima colonna è non nulla (infatti, a meno del segno, $a_{11}$ non è la norma euclidea).
+
+Pertanto dalla \eqref{eq:matrice_A0} si ha:
+\begin{equation}\label{eq:matrice_A1}
+    H_1 A = \begin{pmatrix} a_{11}^{(1)} & a_{12}^{(1)} & \dots & a_{1n}^{(1)} \\ 0 & a_{22}^{(1)} & \dots & a_{2n}^{(1)} \\ \vdots & \vdots & & \vdots \\ 0 & a_{m2}^{(1)} & \dots & a_{mn}^{(1)} \end{pmatrix} \equiv A^{(1)} 
+\end{equation}
+
+\textbf{Osservazione:} Le $m-1$ componenti azzerate in colonna 1 possono essere utilizzate per memorizzare le ultime $m-1$ componenti del vettore di Householder normalizzato in modo da avere la prima componente uguale a 1.
+
+\paragraph{Passo 2:}
+Reiteriamo, ora, la procedura sulla sottomatrice $(m-1) \times (n-1)$ data dallo spigolo in basso a destra di $A^{(1)}$ (dalla riga 2 alla $m$ e colonne dalla 2 alla $n$).
+Possiamo definire la matrice elementare di Householder $H^{(2)} \in \mathbb{R}^{(m-1) \times (m-1)}$ tale che:
+$$ H^{(2)} \begin{pmatrix} a_{22}^{(1)} \\ \vdots \\ a_{m2}^{(1)} \end{pmatrix} = \begin{pmatrix} a_{22}^{(2)} \\ 0 \\ \vdots \\ 0 \end{pmatrix} $$
+\begin{osservazione}
+    $a_{22}^{(2)} \neq 0$, altrimenti A non ha rango max.
+\end{osservazione}
+Definiamo quindi $H_2 = \begin{pmatrix} 1 & 0 \\ 0 & H^{(2)} \end{pmatrix} \in \mathbb{R}^{m \times m}$.
+Osserviamo che $H_2$ è simmetrica e ortogonale. Dalla \eqref{eq:matrice_A1} si ottiene, pertanto, che:
+$$ H_2 H_1 A = \begin{pmatrix} a_{11}^{(1)} & a_{12}^{(1)} & \dots & a_{1n}^{(1)}\\ 0 & a_{22}^{(2)} & \dots & a_{2n}^{(2)} \\ 0 & 0 & \dots \\ \vdots & \vdots & \\ 0 & 0 & \dots & \ a_{mm}^{(2)} \end{pmatrix} \equiv A^{(2)} $$
+
+\begin{osservazione}
+    Anche adesso, la porzione di elementi azzerati in colonna 2 ($m-2$) possono essere utilizzati per memorizzare gli elementi significativi del vettore di Householder normalizzato che definisce $H^{(2)}$.
+\end{osservazione}
+
+Procedendo in modo analogo, possiamo definire matrici $H_i = \begin{pmatrix} I_{i-1} & 0 \\ 0 & H^{(i)} \end{pmatrix}$ ($i=1, \dots, n$), con $I_{i-1} \in \mathbb{R}^{(i-1) \times (i-1)}$ matrice identità e $H^{(i)} \in \mathbb{R}^{(m-i+1) \times (m-i+1)}$ matrice elementare di Householder tale che, in colonna i, al passo i-esimo:
+
+\[
+H^{(i)} 
+\begin{bmatrix}
+a_{ii}^{(i-1)} \\ \vdots \\ \vdots \\ a_{mi}^{(i-1)}
+\end{bmatrix} 
+=
+\begin{bmatrix}
+a_{ii}^{(i)} \\ 0 \\ \vdots \\ 0 
+\end{bmatrix} 
+\in \mathbb{R}^{(m-i+1)}
+\]
+
+ottenendo, in fine:
+
+\[
+\underbrace{H_n \cdot H_{n-1} \cdot \dots \cdot H_1}_{\equiv Q^T} A = 
+\left[
+\begin{array}{ccccc}
+\colorbox{green!30}{$a_{11}^{(1)}$} & \dots & \dots & \dots & \colorbox{green!30}{$a_{1n}^{(1)}$} \\
+\colorbox{yellow!10}{0} & \colorbox{green!30}{$a_{22}^{(2)}$} & \dots & \dots & \colorbox{green!30}{$a_{2n}^{(2)}$} \\
+\colorbox{yellow!10}{$\vdots$} & \colorbox{yellow!10}{$\ddots$} & \colorbox{green!30}{$\ddots$} & & \colorbox{green!30}{$\vdots$} \\
+\colorbox{yellow!10}{$\vdots$} & & \colorbox{yellow!10}{$\ddots$} & \colorbox{green!30}{$\ddots$} & \colorbox{green!30}{$\vdots$} \\
+\colorbox{yellow!10}{0} & \dots & \dots & \colorbox{yellow!10}{0} & \colorbox{green!30}{$a_{nn}^{(n)}$}
+\end{array}
+\right]
+\equiv A^{(n)} \equiv R
+\]
+
+(Nella parte in \colorbox{yellow!50}{giallo} annullata, si possono memorizzare gli elementi significativi dei vettori di Householder normalizzati).
+Da cui si ottiene, formalmente, che A = QR.
+\begin{osservazione}
+\begin{enumerate}
+    \item La procedura si può eseguire se e solo se $\alpha_i \neq 0$ per ogni $i$, ovvero se la colonna corrente non è nulla. Se qualche $\alpha_i$ fosse nullo, allora $A$ non sarebbe a rango massimo.
+    \item Non è richiesto assemblare la matrice $Q$, ma solo calcolare (per ottenere la soluzione ai minimi quadrati) il prodotto $Q^T \mathbf{b}$.
+    Questo può essere ottenuto inizializzando $\mathbf{x} \leftarrow \mathbf{b}$ e successivamente calcolando:
+    \begin{equation} \label{eq:x<-Hi}
+        \mathbf{x} \leftarrow H_i \mathbf{x}, \quad i=1, \dots, n 
+    \end{equation}
+    
+    Infatti, questo è equivalente a $H_n \dots H_1 \mathbf{b} = Q^T \mathbf{b}$.
+    (Senza assemblare il prodotto $H_n \dots H_1$, assolutamente non da fare!!!).
+\end{enumerate}
+\end{osservazione}
+
+Inoltre, nella \eqref{eq:x<-Hi}, osserviamo che:
+\begin{itemize}
+    \item $$ H_i \mathbf{x} = \begin{pmatrix} I_{i-1} & 0 \\ 0 & H^{(i)} \end{pmatrix} \begin{pmatrix} \mathbf{x}_1 \\ \mathbf{x}_2 \end{pmatrix} = \begin{pmatrix} \mathbf{x}_1 \\ H^{(i)} \mathbf{x}_2 \end{pmatrix} $$
+    \item Se $H^{(i)} = I_{m-i+1} - \underbrace{\frac{2}{\hat{\mathbf{v}}_i^T \hat{\mathbf{v}}_i}}_{=\beta_i} \hat{\mathbf{v}}_i \hat{\mathbf{v}}_i^T$, con $\hat{\mathbf{v}}_i$ il vettore di Householder normalizzato, allora:\begin{align*}
+        H^{(i)} \mathbf{x}_2 &= \left( I_{m-i+1} - \beta_i \hat{\mathbf{v}}_i \hat{\mathbf{v}}_i^T \right) \mathbf{x}_2 \\
+        &= \mathbf{x}_2 - \beta_i \hat{\mathbf{v}}_i (\hat{\mathbf{v}}_i^T \mathbf{x}_2) \\
+        &= \mathbf{x}_2 - \hat{\mathbf{v}}_i \left( \beta_i \cdot (\hat{\mathbf{v}}_i^T \mathbf{x}_2) \right),
+    \end{align*}
+    
+    con un costo \colorbox{yellow!50}{lineare}, invece che \colorbox{yellow!50}{quadratico}.
+    
+\end{itemize}
+
+
+\subsubsection{Pseudo-codice Matlab}
+Riassumiamo tutto questo nel seguente pseudo-codice che sovrascrive $A \in \mathbb{R}^{m \times n}$ con l'informazione dei fattori $Q$ e $R$ (posizione significativa dei vettori di Householder normalizzati a porzione triangolare di R).
+
+\begin{lstlisting}[language=Matlab, frame=none, numbers=none]
+for i = 1:n
+    alfa = norm(A(i:m, i));
+    if alfa == 0, error('A non ha rango max'), end
+    
+    if A(i,i) >= 0, alfa = -alfa; end
+    
+    v1 = A(i,i) - alfa;
+    A(i,i) = alfa;
+    A(i+1:m, i) = A(i+1:m, i) / v1; % v_hat (parte significativa)
+    
+    beta = -v1 / alfa;
+    
+    % Aggiornamento sottomatrice A(i:m, i+1:n)
+    % H * A_sub = (I - beta * v * v') * A_sub
+    A(i:m, i+1:n) = A(i:m, i+1:n) - ...
+       (beta * [1; A(i+1:m, i)]) * ...
+       ([1; A(i+1:m, i)]' * A(i:m, i+1:n));
+end
+\end{lstlisting}
+
+
+
+
+
+%lezione 10 dicembre
+\subsubsection*{Dettagli sulla scelta di $\beta$}
+Se $\hat{\mathbf{v}} = \frac{\mathbf{v}}{v_1} = \frac{\mathbf{x} - \alpha \mathbf{e}_1}{x_1 - \alpha}$ (con prima componente normalizzata a 1), allora il coefficiente $\beta$ si calcola come:
+$$ \beta = \frac{2}{\hat{\mathbf{v}}^T \hat{\mathbf{v}}} = \dots = -\frac{v_1}{\alpha} $$
+come visto nelle sezioni precedenti.
+
+\subsubsection*{Aggiornamento della sottomatrice}
+L'operazione chiave all'interno del ciclo è l'aggiornamento della porzione di interesse della matrice:
+$$ H \text{A} = (I - \beta \hat{\mathbf{v}} \hat{\mathbf{v}}^T) \text{A} = \text{A} - (\beta \hat{\mathbf{v}}) (\hat{\mathbf{v}}^T \text{A}) $$
+dove $\hat{\mathbf{v}}$ è il vettore normalizzato (con 1 in testa).
+Questi accorgimenti consentono di ottenere un costo, in termini di operazioni algebriche elementari, di:
+$$ \approx \frac{2}{3}n^2(3m - n) \text{ flops}. $$
+
+\begin{osservazione}
+Si potrebbe utilizzare la fattorizzazione $A=QR$ anche nel caso $A \in \mathbb{R}^{n \times n}$ (quadrata), sotto l'ipotesi che $A$ sia non singolare.
+Tuttavia, se $m=n$, il costo per ottenere la fattorizzazione $A=QR$ sarebbe $\approx \frac{4}{3}n^3$ flops, ovvero il doppio rispetto a quello della fattorizzazione LU con pivoting ($\frac{2}{3}n^3$).
+Pertanto, quest'ultimo è quello di elezione nel caso quadrato.
+\end{osservazione}
+
+\subsection{Cenni sulla risoluzione di sistemi di equazioni non lineari}
+
+Rammentiamo che, nel caso scalare $f(x)=0$ con $f: \mathbb{R} \to \mathbb{R}$, abbiamo esaminato tra gli altri:
+\begin{enumerate}
+    \item \textbf{Metodo di Newton:}
+    $$ x_{i+1} = x_i - \frac{f(x_i)}{f'(x_i)}, \quad i=0,1,\dots $$
+    \item \textbf{Metodo delle corde:}
+    $$ x_{i+1} = x_i - \frac{f(x_i)}{f'(x_0)} $$
+\end{enumerate}
+Entrambi con convergenza locale e con ordine quadratico (Newton) e lineare (Corde) verso radici semplici 
+
+\begin{osservazione}
+    Se $x^*$ è radice semplice, allora $f(x^*)=0 \wedge f'(x^*) \neq 0$.
+\end{osservazione}
+
+
+\subsubsection{Generalizzazione a sistemi}
+Per generalizzare il metodo di Newton al caso di sistemi, riscriviamo formalmente l'iterazione scalare come:
+$$ x_{i+1} = x_i - f'(x_i)^{-1} f(x_i) \text{  con $i$ = 0,1,.....}$$ 
+
+Supponiamo ora di voler risolvere il sistema di $n$ equazioni non lineari nelle $n$ incognite $\mathbf{x} = (x_1, \dots, x_n)^T \in \mathbb{R}^n$:
+\begin{equation} \label{eq:sis_nonlin}
+    F(\mathbf{x}) = \mathbf{0} \in \mathbb{R}^n
+\end{equation}
+dove $F: \mathbb{R}^n \to \mathbb{R}^n$.
+Definendo le funzioni componenti di $F(\mathbf{x})$ come $f_i: \mathbb{R}^n \to \mathbb{R}$, possiamo riscrivere il sistema come:
+$$ \begin{cases} f_1(\mathbf{x}) = 0 \\ \vdots \\ f_n(\mathbf{x}) = 0 \end{cases} $$
+
+\begin{osservazione}
+    Se $\mathbf{e}_i \in \mathbb{R}^n$ è l'i-esimo versore, $f_i(\mathbf{x}) = \mathbf{e}_i^T F(\mathbf{x})$.
+\end{osservazione}
+
+
+Dato $\mathbf{x}^0 \in \mathbb{R}^n$, possiamo considerare una approssimazione lineare di $F(\mathbf{x})$ in un intorno di $\mathbf{x}^0$:
+\begin{equation} \label{eq:linearizzazione}
+    F(\mathbf{x}) \approx F(\mathbf{x}^0) + F'(\mathbf{x}^0)(\mathbf{x} - \mathbf{x}^0)
+\end{equation}
+dove $F'(\mathbf{x}^0)$ è la \textbf{matrice Jacobiana} di $F(\mathbf{x})$ calcolata in $\mathbf{x}^0$.
+Questa è così definita come $F'(\mathbf{x}) \in \mathbb{R}^{n \times n}$ il cui elemento $(i,j)$ è dato dalla derivata parziale di $f_i(\mathbf{x})$ rispetto alla componente $x_j$:
+$$ (F'(\mathbf{x}))_{ij} = \frac{\partial}{\partial x_j} f_i(\mathbf{x}) = \lim_{\epsilon \to 0} \frac{f_i(\mathbf{x} + \epsilon \mathbf{e}_j) - f_i(\mathbf{x})}{\epsilon} $$
+
+Imponendo che il secondo membro della \eqref{eq:linearizzazione} si annulli, otteniamo:
+$$ F(\mathbf{x}^0) + F'(\mathbf{x}^0)(\mathbf{x} - \mathbf{x}^0) = \mathbf{0} $$
+Supponendo $F'(\mathbf{x}^0)$ non singolare:
+$$ \mathbf{x}^1 = \mathbf{x}^0 - (F'(\mathbf{x}^0))^{-1} F(\mathbf{x}^0) $$
+
+\subsubsection{Metodo di Newton per sistemi}
+Reiterando il procedimento, si ottiene il Metodo di Newton:
+\begin{equation} \label{eq:newton_sis}
+    \mathbf{x}^{i+1} = \mathbf{x}^i - (F'(\mathbf{x}^i))^{-1} F(\mathbf{x}^i), \quad i=0,1,\dots
+\end{equation}
+
+\begin{esempio}
+Se $F: \mathbb{R}^2 \to \mathbb{R}^2$ è definita come:
+$$ F(\mathbf{x}) = \begin{pmatrix} \cos(x_1) + e^{x_2} \\ \sin(x_1) + 7x_2^2 \end{pmatrix}, \quad \mathbf{x} = \begin{pmatrix} x_1 \\ x_2 \end{pmatrix} $$
+allora la matrice Jacobiana è:
+$$ F'(\mathbf{x}) = \begin{bmatrix} -\sin(x_1) & e^{x_2} \\ \cos(x_1) & 14x_2 \end{bmatrix} $$
+\end{esempio}
+
+\begin{osservazione}
+L'iterazione \eqref{eq:newton_sis} può essere equivalentemente formulata come:
+\begin{enumerate}
+    \item Risolvi il sistema lineare: $F'(\mathbf{x}^i) \Delta \mathbf{x}^i = -F(\mathbf{x}^i)$
+    \item Aggiorna: $\mathbf{x}^{i+1} = \mathbf{x}^i + \Delta \mathbf{x}^i$
+\end{enumerate}
+Pertanto, il costo computazionale per iterazione consisterà in:
+\begin{enumerate}
+    \item Calcolo di $F(\mathbf{x}^i)$ e $F'(\mathbf{x}^i)$ (costoso);
+    \item Fattorizzazione di $F'(\mathbf{x}^i)$ ($2/3 n^3$ flops);
+    \item Risoluzione del sistema lineare ($2n^2$ flops);
+    \item Aggiornamento approssimazione ($n$ flops).
+\end{enumerate}
+\end{osservazione}
+
+\subsubsection{Metodo delle Corde (Newton Modificato)}
+Al fine di ridurre il costo relativo al calcolo e alla fattorizzazione della Jacobiana, è possibile utilizzare la versione vettoriale del metodo delle corde:
+\begin{enumerate}
+    \item Risolvi: $F'(\mathbf{x}^0) \Delta \mathbf{x}^i = -F(\mathbf{x}^i)$
+    \item Aggiorna: $\mathbf{x}^{i+1} = \mathbf{x}^i + \Delta \mathbf{x}^i$
+\end{enumerate}
+In questo caso, la matrice Jacobiana $F'(\mathbf{x}^0)$ si calcola e si fattorizza \textbf{solo una volta}.
+Per questo motivo, sebbene questa iterazione converga più lentamente di quella di Newton (ordine lineare invece che quadratico), ha un costo globale generalmente inferiore.
+
+\paragraph{Criterio di arresto}
+Come ogni procedimento iterativo, necessita di un idoneo criterio di arresto. Nel presente caso, un criterio molto utilizzato è basato sulla norma dell'incremento:
+$$ \left\| \Delta \mathbf{x}_i / (1 + |\mathbf{x}_i|) \right\|_\infty \le \text{tol} $$
+dove il termine $(1+|\mathbf{x}_i|)$ è un vettore con i valori assoluti della approssimazione corrente, e $\text{tol}$ è un'opportuna tolleranza.
