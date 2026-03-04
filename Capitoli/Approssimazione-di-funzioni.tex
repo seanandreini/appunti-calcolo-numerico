@@ -1,0 +1,233 @@
+%25/02/2026
+\section{Approssimazione di funzioni}
+\subsection{Interpolazione polinomiale}
+
+Dal punto di vista geometrico, abbiamo la seguente situazione:
+
+\begin{center}
+\begin{tikzpicture}[scale=1.2]
+    % Assi
+    \draw[->, thick] (0,0) -- (10,0) node[right] {$x$};
+    \draw[->, thick] (0,0) -- (0,5);
+    
+    % Punti sull'asse x
+    \draw (1,0) node[below] {$x_0$} -- (1,0.1);
+    \draw (3,0) node[below] {$x_1$} -- (3,0.1);
+    \draw (5,0) node[below] {$x_2$} -- (5,0.1);
+    \node at (6.5, -0.3) {$\dots$};
+    \draw (8.5,0) node[below] {$x_n$} -- (8.5,0.1);
+    
+    % Funzione f(x)
+    \draw[blue, thick] (1,1.5) to[out=45, in=190] (3,2.5) to[out=10, in=180] (5,2.8) to[out=0, in=200] (8.5, 4.5) node[below right] {$f(x)$};
+    
+    % Polinomio interpolante
+    \draw[orange, thick] (1,1.5) to[out=10, in=200] (3,2.5) to[out=45, in=170] (5,2.8) to[out=-10, in=220] (8.5, 4.5);
+    
+    % Linee tratteggiate e punti rossi
+    \draw[dashed, red] (1,0) -- (1,1.5);
+    \fill[red] (1,1.5) circle (1.5pt);
+    
+    \draw[dashed, red] (3,0) -- (3,2.5);
+    \fill[red] (3,2.5) circle (1.5pt);
+    
+    \draw[dashed, red] (5,0) -- (5,2.8);
+    \fill[red] (5,2.8) circle (1.5pt);
+    
+    \draw[dashed, red] (8.5,0) -- (8.5,4.5);
+    \fill[red] (8.5,4.5) circle (1.5pt);
+\end{tikzpicture}
+\end{center}
+
+Data una funzione $f:[a,b]\rightarrow \mathbb{R}$, e $n+1$ ascisse distinte nell'intervallo $[a,b]$, $a \le x_0 < x_1 < \dots < x_n \le b$,  in cui è noto il valore della funzione $f(x)$. Ovvero sono assegnate $n+1$ coppie di dati $(x_i, f_i)$, dove $f_i \equiv f(x_i)$, per $i=0,\dots,n$.
+
+\textbf{Obiettivo}: costruire una funzione ``semplice'' che interpola i dati $(x_i, f_i)$. A riguardo, considereremo tra le varie possibilità, funzioni interpolanti che sono polinomi.
+
+\begin{definition}
+Diremo che $p(x) \in \Pi_n$ è il polinomio interpolante le coppie di dati $(x_i, f_i)$ per $i=0,\dots,n$ se $p(x_i) = f_i$ per $i=0,\dots,n$.
+\end{definition}
+
+Vale a riguardo il seguente risultato.
+
+\begin{teorema}
+Date le $n+1$ coppie di dati $(x_i, f_i)$ per $i=0,\dots,n$ con $x_i \neq x_j$ se $i \neq j$ (ascisse distinte), allora esiste ed è unico $p(x) \in \Pi_n$ tale che $p(x_i) = f_i$ per $i=0,\dots,n$.
+\end{teorema}
+
+\begin{proof}
+Se $p(x) \in \Pi_n$, allora sarà della forma:
+$$p(x) = \sum_{k=0}^{n} a_k x^k \quad (1)$$
+dove $a_0, \dots, a_n$ sono i coefficienti (per il momento incogniti) della rappresentazione di $p(x)$ rispetto alla base delle potenze $(x^0, x^1, \dots, x^n)$. 
+
+I coefficienti si otterranno imponendo le condizioni di interpolazione:
+$$p(x_i) = \sum_{k=0}^{n} a_k x_i^k = f_i, \quad i=0,\dots,n$$
+ovvero:
+\begin{align*}
+x_0^0 a_0 + x_0^1 a_1 + \dots + x_0^n a_n &= f_0 \\
+x_1^0 a_0 + x_1^1 a_1 + \dots + x_1^n a_n &= f_1 \\
+&\dots \\
+x_n^0 a_0 + x_n^1 a_1 + \dots + x_n^n a_n &= f_n
+\end{align*}
+che è un sistema di $n+1$ equazioni lineari nelle $n+1$ incognite $a_0, \dots, a_n$. Pertanto la sua soluzione esisterà ed è unica se e solo se la matrice dei coefficienti è non singolare.
+
+Se definiamo il vettore delle incognite $\underline{a} = [a_0, a_1, \dots, a_n]^T \in \mathbb{R}^{n+1}$ e quello dei termini noti $\underline{b} = [f_0, f_1, \dots, f_n]^T \in \mathbb{R}^{n+1}$, allora il sistema lineare (1) si può scrivere in forma vettoriale come:
+$$V \underline{a} = \underline{b} \quad (2)$$
+con:
+$$V = \begin{bmatrix}
+1 & x_0 & \dots & x_0^n \\
+1 & x_1 & \dots & x_1^n \\
+\vdots & \vdots & \ddots & \vdots \\
+1 & x_n & \dots & x_n^n
+\end{bmatrix} \in \mathbb{R}^{(n+1) \times (n+1)}$$
+
+$V$ è la matrice di Vandermonde, molto nota in Analisi Numerica. In particolare, si capisce che:
+$$\det(V) = \prod_{i>j} (x_i - x_j) \neq 0$$
+poiché le ascisse sono, per ipotesi, tutte tra loro distinte. Pertanto, la soluzione di (2) esiste ed è unica, ovvero esiste ed è unico il polinomio $p(x) \in \Pi_n$ interpolante le coppie di dati.
+\end{proof}
+
+\textbf{Osservazione}: Osserviamo che, tuttavia, il calcolo del polinomio interpolante mediante la risoluzione del sistema lineare (2) non è una buona prassi computazionale. Questo è dovuto al fatto che il numero di condizionamento della matrice $V$ cresce rapidamente al crescere di $n$. 
+
+Ad esempio, se prendiamo $x_i = i/n$ ascisse equidistanti, otteniamo dei numeri di questo tipo:
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+$n$ & 2 & 3 & 5 & 10 \\
+\hline
+$K(V)$ & $\sim 15$ & $\sim 100$ & $\sim 5 \cdot 10^3$ & $\sim 10^{17}$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\textit{Esercizio}: calcolare la precedente tabella (\texttt{help vander}).
+
+Per ovviare al precedente problema, occorre utilizzare una differente base polinomiale per rappresentare $p(x)$. 
+
+\textbf{OSS (NB)}: Anche se cambiamo base per rappresentare $p(x)$, il polinomio rimane lo stesso, perché esso è unico.
+
+La base polinomiale che andiamo a considerare è quella di Lagrange:
+$$L_{in}(x) = \prod_{\substack{j=0 \\ j \neq i}}^{n} \frac{x - x_j}{x_i - x_j}, \quad i=0,\dots,n$$
+
+\textbf{Osservazioni}:
+\begin{enumerate}
+    \item Si tratta di $n+1$ polinomi, ben definiti se le ascisse sono distinte.
+    \item $L_{in}(x) \in \Pi_n$ per $i=0,\dots,n$.
+    \item $L_{in}(x_k) = \begin{cases} 1, & \text{se } k=i \\ 0, & \text{se } k \neq i \end{cases}$.   \newline
+    Introducendo il ``delta di Kronecker'', $\delta_{ik} = \begin{cases} 1, & \text{se } i=k \\ 0, & \text{se } i \neq k \end{cases}$, abbiamo quindi che $L_{in}(x_k) = \delta_{ik}$.
+    \item Dimostrare che i polinomi $\{L_{in}(x)\}_{i=0}^{n}$ sono linearmente indipendenti. Ovvero, dimostrare che se $\sum_{i=0}^{n} c_i L_{in}(x) = 0 \implies c_0 = c_1 = \dots = c_n = 0 \quad \forall x \in \mathbb{R}$ (Esercizio). Pertanto, essi costituiscono una base per $\Pi_n$.
+    \item Il polinomio $p(x) \in \Pi_n$ tale che $p(x_i) = f_i$, $i=0,\dots,n$ si può rappresentare come:
+    $$p(x) = \sum_{i=0}^{n} f_i \cdot L_{in}(x) \quad (3)$$
+    Infatti:
+    $$p(x_k) = \sum_{i=0}^{n} f_i \cdot L_{in}(x_k) = \sum_{i=0}^{n} f_i \delta_{ik} = f_k \delta_{kk} = f_k, \quad \forall k=0,\dots,n$$
+\end{enumerate}
+
+\begin{definition}
+La (3) definisce la forma di Lagrange del polinomio interpolante.
+\end{definition}
+
+
+%26/02/2026
+
+Data $f:[a,b]\rightarrow \mathbb{R}$ e $n+1$ ascisse distinte $x_0, \dots, x_n \in [a,b]$, abbiamo visto che $\exists! p(x) \in \Pi_n$ tale che:
+$$p_n(x_i) = f(x_i) \equiv f_i, \quad i=0,\dots,n.$$
+$p_n(x)$ è il polinomio interpolante di grado (al più) $n$ la funzione $f(x)$ sulle ascisse assegnate.
+
+Abbiamo espresso il polinomio $p_n(x)$ rispetto a due basi di $\Pi_n$:
+$$p_n(x) = \sum_{k=0}^{n} a_k x^k \quad \text{(rispetto alla base canonica/potenze)}$$
+$$p_n(x) = \sum_{i=0}^{n} f_i L_{in}(x) \quad \text{(rispetto alla base di Lagrange)}$$
+
+Osservando che i polinomi di base di Lagrange sono dati da:
+$$L_{in}(x) = \prod_{\substack{j=0 \\ j \neq i}}^{n} \frac{x-x_j}{x_i-x_j}, \quad i=0,\dots,n$$
+abbiamo visto che $L_{in}(x) \in \Pi_n$. Calcoliamo il suo coefficiente principale:
+
+Osservando che al denominatore abbiamo $\prod_{\substack{j=0 \\ j \neq i}}^{n} (x_i-x_j)$ e al numeratore:
+$$(x-x_0) \cdot \dots \cdot (x-x_{i-1})(x-x_{i+1}) \cdot \dots \cdot (x-x_n) = x^n + \dots$$
+che è un polinomio monico (ovvero, con coefficiente principale uguale a $1$).
+
+Pertanto, concludiamo che il coefficiente principale di $L_{in}(x)$ è dato da:
+$$c_{in} = \frac{1}{\prod_{\substack{j=0 \\ j \neq i}}^{n} (x_i-x_j)} \quad (1)$$
+Infatti:
+$$L_{in}(x) = \prod_{\substack{j=0 \\ j \neq i}}^{n} \frac{x-x_j}{x_i-x_j} = \frac{\prod_{\substack{j=0 \\ j \neq i}}^{n} (x-x_j)}{\prod_{\substack{j=0 \\ j \neq i}}^{n} (x_i-x_j)} = \frac{\text{polinomio monico}}{\prod_{\substack{j=0 \\ j \neq i}}^{n} (x_i-x_j)}$$
+da cui si deduce che il coefficiente principale di $L_{in}(x)$ è dato da (1).
+
+Da questo si deduce che il coefficiente principale di $p_n(x)$ sarà dato da:
+$$\sum_{i=0}^{n} c_{in} \cdot f_i = \sum_{i=0}^{n} \frac{f_i}{\prod_{\substack{j=0 \\ j \neq i}}^{n} (x_i-x_j)} \quad (2)$$
+
+A questo punto, ci poniamo la seguente domanda:
+Se definiamo $p_r(x) \in \Pi_r$ il polinomio interpolante $f(x)$ sulle $r+1$ ascisse $x_0, \dots, x_r$, è possibile definire in modo incrementale $p_r(x)$ a partire da $p_{r-1}(x)$, che è il polinomio interpolante $f(x)$, di grado al più $r-1$, sulle ascisse $x_0, \dots, x_{r-1}$?
+
+A questo fine, osserviamo che la base di Lagrange si presta male a questo fine. Infatti:
+$$p_r(x) = \sum_{i=0}^{r} f_i L_{ir}(x), \quad L_{ir}(x) = \prod_{\substack{j=0 \\ j \neq i}}^{r} \frac{x-x_j}{x_i-x_j}$$
+mentre:
+$$p_{r-1}(x) = \sum_{i=0}^{r-1} f_i L_{i,r-1}(x), \quad L_{i,r-1}(x) = \prod_{\substack{j=0 \\ j \neq i}}^{r-1} \frac{x-x_j}{x_i-x_j}, \quad i=0,\dots,r-1$$
+
+A fronte di questo, vogliamo esprimere invece in forma incrementale $p_r(x)$ come:
+$$p_r(x) = p_{r-1}(x) + c_r \omega_r(x) \quad (3)$$
+per $r=1,\dots,n \implies p_n(x)$ sarà, infine, il polinomio che interpola $f(x)$ su tutte le ascisse.
+
+Per ottenere questo obiettivo, dobbiamo ricorrere ad un'ulteriore base di rappresentazione: \textbf{la base di Newton}.
+
+Essa è una base di polinomi monici, così definita:
+$$\begin{cases}
+\omega_0(x) = 1 \\
+\omega_i(x) = \omega_{i-1}(x)(x-x_{i-1}), & i=1,2,\dots
+\end{cases}$$
+
+\textbf{Osserviamo che:}
+\begin{enumerate}
+    \item Ragionando per induzione, otteniamo che per $i \ge 1$, $\omega_i(x) = \prod_{j=0}^{i-1} (x-x_j)$, ovvero, $\omega_i(x)$ è un polinomio monico di grado esatto $i$, le cui radici sono $x_0, \dots, x_{i-1}$.
+    \item Pertanto, $\omega_i(x_j) = 0$, per ogni $j < i$, con i = 1,...,n.
+    \item Avendo $\omega_i(x)$ grado esatto $i, \forall i=0,\dots,n$, abbiamo che i polinomi sono linearmente indipendenti e costituiscono una base di $\Pi_n$: \textbf{la base di Newton}.
+\end{enumerate}
+
+A questo punto, assegnate le $n+1$ ascisse $x_0, \dots, x_n$ (distinte tra loro), è possibile costruire in forma incrementale la famiglia di polinomi interpolanti $\{p_r(x)\}_{r=0}^n$ tali che $p_r(x) \in \Pi_r, \forall r=0,\dots,n : p_r(x_i) = f_i, i=0,\dots,r$, come segue:
+
+$$\begin{cases}
+p_0(x) = f_0 \in \Pi_0 \\
+p_r(x) = \underbrace{p_{r-1}(x)}_{\in \Pi_{r-1}} + f[x_0, \dots, x_r] \underbrace{\omega_r(x)}_{\in \Pi_r}, & r=1,\dots,n
+\end{cases} \quad (5)$$
+
+con il coefficiente:
+$$f[x_0, \dots, x_r] = \sum_{i=0}^{r} \frac{f_i}{\prod_{\substack{j=0 \\ j \neq i}}^{r} (x_i-x_j)} \quad (6)$$
+
+Andiamo a dimostrare che se:
+$$p_{r-1}(x_i) = f_i, \quad i=0,\dots,r-1 \quad (7)$$
+allora è possibile determinare univocamente $f[x_0, \dots, x_r]$ nella (5) in modo tale che:
+$$p_r(x_i) = f_i, \quad i=0,\dots,r \quad (8)$$
+Successivamente dimostreremo che $f[x_0, \dots, x_r]$ è scrivibile nella forma (6).
+
+Procedendo per induzione, abbiamo che $p_0(x) \in \Pi_0$ e $p_0(x_0) = f_0$.
+Assunto, quindi, vero (7), andiamo a verificare che è possibile determinare $f[x_0, \dots, x_r]$, in modo che sia soddisfatta la (8).
+
+$$
+p_r(x_i) = p_{r-1}(x_i) + f[x_0, \dots, x_r]\omega_r(x_i) = 
+\begin{cases} 
+i < r: & f_i + f[x_0, \dots, x_r] \cdot \omega_r(x_i) = f_i \quad (\text{perché } \omega_r(x_i) = 0) \\
+i = r: & p_{r-1}(x_r) + f[x_0, \dots, x_r]\omega_r(x_r) \underset{\text{imponiamo}}{=} f_r 
+\end{cases}
+$$
+
+Da cui otteniamo, considerato che le ascisse sono distinte e pertanto $\omega_r(x_r) \neq 0$, che possiamo soddisfare la condizione di interpolazione imponendo:
+$$f[x_0, \dots, x_r] = \frac{f_r - p_{r-1}(x_r)}{\omega_r(x_r)}$$
+
+Facciamo ora vedere che $f[x_0, \dots, x_r]$ si può esprimere nella forma (6). Per fare questo, osserviamo che:
+\begin{enumerate}
+    \item $f[x_0, \dots, x_r]$ è il coefficiente principale di $p_r(x)$.
+    \item Dalla (2) con $n=r$, otteniamo che il secondo membro della (6) non è altri che il coefficiente principale di $p_r(x)$ scritto in forma di Lagrange.
+\end{enumerate}
+Pertanto, essi devono coincidere. Concludiamo che la espressione (6) deve valere.
+
+\begin{definition}
+$f[x_0, \dots, x_r]$, $r=0, \dots, n$ definita nella (6) è detta \textbf{differenza divisa} di $f(x)$ sulle ascisse $x_0, \dots, x_r$.
+\end{definition}
+
+\textbf{Osservazione}: Dalla (5) si ottiene che:
+$$p_n(x) = \sum_{r=0}^{n} f[x_0, \dots, x_r] \omega_r(x) \quad (9)$$
+
+\begin{definition}
+La (9) definisce la \textbf{forma di Newton} del polinomio interpolante.
+\end{definition}
+
+\textbf{Osservazione}: Il polinomio $p_n(x)$, ricordiamo, è unico. Pertanto:
+$$p_n(x) = \sum_{i=0}^{n} f_i L_{in}(x) = \sum_{i=0}^{n} f[x_0, \dots, x_i] \omega_i(x)$$
+ovvero, la forma di Lagrange e quella di Newton del polinomio interpolante sono \textbf{algebricamente equivalenti}.
+
+\textbf{Osservazione}: Questo non è vero in aritmetica finita.
