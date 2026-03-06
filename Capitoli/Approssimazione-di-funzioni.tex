@@ -369,3 +369,177 @@ $x_n$ & $f[x_n]$ & $\dots$ & $\dots$ & $f[x_0, \dots, x_n]$ \\
 \textbf{OSS:} Se calcoliamo le colonne di questa matrice triangolare dal basso verso l'alto, possiamo sovrascrivere i risultati negli elementi adiacenti a sinistra. Pertanto, sarà sufficiente un vettore di $n+1$ elementi. 
 Gli elementi sulla diagonale principale sono le differenze divise necessarie per il calcolo del polinomio in forma di Newton.
 
+
+
+
+
+%05/03/2026
+\vspace{0.5cm}
+
+Data $f:[a,b] \rightarrow \mathbb{R}$ e date $a \le x_0 < x_1 < \dots < x_n \le b$ \\
+Allora $\exists! p(x) \in \Pi_n : p(x_i) = f(x_i) \equiv f_i$, $i=0, \dots, n$.
+
+\begin{itemize}
+    \item[(1)] Forma di Lagrange di $p(x)$
+    \item[(2)] Forma di Newton di $p(x)$:
+    $$p(x) = \sum_{i=0}^{n} f[x_0, \dots, x_i] \omega_i(x)$$
+    $$\begin{cases}
+    \omega_i(x) = \omega_{i-1}(x) \cdot (x-x_{i-1}), & i \ge 1 \\
+    \omega_0(x) \equiv 1
+    \end{cases}$$
+\end{itemize}
+
+i cui coefficienti sono le differenze divise di $f(x)$ sulle ascisse in argomento.
+
+Utilizzando la proprietà ``incrementale'' per il calcolo delle differenze divise:
+$$
+(3) \quad
+\begin{cases} 
+f[x_r] = f(x_r) \equiv f_r \\ 
+f[x_0, \dots, x_r] = \frac{f[x_1, \dots, x_r] - f[x_0, \dots, x_{r-1}]}{x_r - x_0}
+\end{cases}
+$$
+Esaminiamo, in dettaglio, il caso $n=2$ prima di derivare una procedura generale per il calcolo delle differenze divise nel caso $n$ generico.
+
+Caso $n=2$:
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{l|lll}
+0 & $x_0$ & $f[x_0] = f_0$ & \\
+1 & $x_1$ & $f[x_1] = f_1 \xrightarrow{\hspace{1cm}} f[x_0, x_1] = \frac{f[x_1]-f[x_0]}{x_1-x_0}$ & \\
+2 & $x_2$ & $f[x_2] = f_2 \xrightarrow{\hspace{1cm}} f[x_1, x_2] = \frac{f[x_2]-f[x_1]}{x_2-x_1} \xrightarrow{\hspace{1cm}} f[x_0, x_1, x_2] = \frac{f[x_1, x_2]-f[x_0, x_1]}{x_2-x_0}$
+\end{tabular}
+\end{center}
+
+(4) Scriviamo, a partire da questo, un pseudo-codice Matlab che implementa questo algoritmo nel caso generale.
+Poiché i vettori in ingresso hanno indicizzazione a partire da $1$, i vettori in ingresso saranno $x$ e $f$ di lunghezza $n+1$.
+
+\begin{verbatim}
+for j = 1:n
+    for i = n+1:-1:j+1
+        f(i) = (f(i) - f(i-1)) / (x(i) - x(i-j));
+    end
+end
+\end{verbatim}
+
+\textbf{OSS:} Pertanto, questo pseudo-codice è, evidentemente, funzionante in modo corretto se e solo se il vettore $x$ contiene elementi tra loro distinti. Questo controllo, a qualche livello, va effettuato prima di eseguire le precedenti istruzioni.
+
+Vediamo qual è il costo computazionale dell'algoritmo (4).
+
+\textbf{Occupazione di memoria:} 2 vettori di lunghezza $n+1$ ($x$ e $f$). Pertanto, la complessità è lineare in $n$.
+
+\textbf{Numero di operazioni:} abbiamo 3 operazioni elementari nel ciclo più interno. Pertanto, otteniamo:
+$$3 \sum_{j=1}^{n} (n - j + 1) = 3 \sum_{j=1}^{n} j = 3 \frac{n(n+1)}{2} = \mathcal{O}(n^2)$$
+
+\textbf{OSS:} 
+$$\sum_{j=0}^{n} j^k \approx \int_{0}^{n} x^k \, dx = \frac{n^{k+1}}{k+1}$$
+
+Quindi, complessità quadratica nel grado del polinomio interpolante.\\
+
+Avendo compreso come calcolare in modo efficiente le differenze divise in (1), vediamo come calcolare efficientemente il polinomio $p(x)$.
+
+Per ottenere una soluzione di questo problema, consideriamo, preliminarmente, un problema più semplice, ovvero il calcolo di un polinomio di grado $n$ rispetto alla base delle potenze:
+$$(5) \quad p(x) = \sum_{i=0}^{n} a_i x^i$$
+
+es: $n=2$
+$$p(x) = a_0 + a_1 x + a_2 x^2$$
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{l|l}
+$p = a_2$ & $a_2$ \\
+$p \leftarrow p \cdot x + a_1$ & $a_2 x + a_1$ \\
+$p \leftarrow p \cdot x + a_0$ & $(a_2 x + a_1)x + a_0 = a_2 x^2 + a_1 x + a_0$
+\end{tabular}
+\end{center}
+
+In generale, per il polinomio in (5) avremo che:
+\begin{verbatim}
+p = a_n
+per i = 1:n
+    p = p * x + a_{n-i}
+fine per
+\end{verbatim}
+$\implies p$ conterrà, alla fine, il valore di $p(x)$.
+
+Questo è l'algoritmo di Horner per il calcolo di un polinomio. La complessità è $3n$ flops.
+
+Pseudo-codice Matlab (al solito, i vettori hanno componenti numerate da $1$ a $n+1$ invece che da $0$ a $n$):
+\begin{verbatim}
+p = a(n+1);
+for i = n:-1:1
+    p = p * x + a(i);
+end
+\end{verbatim}
+
+\textbf{N.B.:} se volessimo calcolare il polinomio in un vettore di punti, è sufficiente sostituire l'operazione nel ciclo con:
+\begin{verbatim}
+    p = p .* x + a(i);
+\end{verbatim}
+
+Questo algoritmo può essere generalizzato al caso del polinomio interpolante (1) utilizzando la definizione incrementale (2) della base di Newton.
+
+\begin{verbatim}
+p = f[x_0, ..., x_n]
+per i = 1:n
+    p = p * (x - x_{n-i}) + f[x_0, ..., x_{n-i}]
+fine per
+\end{verbatim}
+
+In pseudo-codice Matlab, se $x$ e $f$ sono i vettori con le ascisse e le differenze divise (vedi (4)), mentre $xx$ è il vettore di punti in cui calcolare il polinomio:
+
+\begin{verbatim}
+p = f(n+1);
+for i = n:-1:1
+    p = p .* (xx - x(i)) + f(i);
+end
+\end{verbatim}
+
+dove, al solito, il `.*` è utilizzato per calcolare il polinomio interpolante in un vettore $xx$ di ascisse. Pertanto con un costo di $3n$ flops per ogni punto in cui viene calcolato il polinomio interpolante.
+
+\vspace{1cm}
+
+\begin{center}
+\begin{tikzpicture}[scale=1.5]
+    % Assi
+    \draw[->, thick] (0,0) -- (8,0) node[right] {$x$};
+    \draw[->, thick] (0,0) -- (0,4);
+    
+    % Nodi
+    \draw (1,0) node[below] {$x_0 \equiv a$} -- (1,0.1);
+    \draw (3,0) node[below] {$x_1$} -- (3,0.1);
+    \draw (5,0) node[below] {$x_2$} -- (5,0.1);
+    \draw (7,0) node[below] {$x_3 \equiv b$} -- (7,0.1);
+    
+    % Linee tratteggiate e punti di intersezione
+    \draw[dashed, gray] (1,0) -- (1,1.5);
+    \fill[black] (1,1.5) circle (1.5pt);
+    
+    \draw[dashed, gray] (3,0) -- (3,2.8);
+    \fill[black] (3,2.8) circle (1.5pt);
+    
+    \draw[dashed, gray] (5,0) -- (5,1.2);
+    \fill[black] (5,1.2) circle (1.5pt);
+    
+    \draw[dashed, gray] (7,0) -- (7,3.5);
+    \fill[black] (7,3.5) circle (1.5pt);
+
+    % Funzione f(x) e p(x)
+    \draw[blue, thick] (1,1.5) to[out=60, in=180] (3,2.8) to[out=0, in=150] (5,1.2) to[out=-30, in=200] (7,3.5);
+    \node[blue] at (2, 2.5) {$f(x)$};
+
+    \draw[orange, thick] (1,1.5) to[out=40, in=190] (3,2.8) to[out=10, in=130] (5,1.2) to[out=-50, in=220] (7,3.5);
+    \node[orange] at (6, 2) {$p(x)$};
+
+\end{tikzpicture}
+\end{center}
+
+$p(x)$ è il polinomio interpolante $f(x)$ nelle ascisse assegnate.
+Se definiamo (funzione dell'errore):
+$$e(x) = f(x) - p(x)$$
+ricordando che $p(x_i) = f(x_i)$, $i=0,\dots,n$, otteniamo che:
+$$e(x_i) = 0, \quad i=0,\dots,n.$$
+
+Cosa succede se $x \neq x_i$?
+
+\end{document}
