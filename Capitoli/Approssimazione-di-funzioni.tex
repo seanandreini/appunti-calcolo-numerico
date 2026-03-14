@@ -99,6 +99,52 @@ $K(V)$ & $\sim 15$ & $\sim 100$ & $\sim 5 \cdot 10^3$ & $\sim 10^{17}$ \\
 
 \textit{Esercizio}: calcolare la precedente tabella (\texttt{help vander}).
 
+\vspace{0.5cm}
+\textbf{Svolgimento dell'esercizio (GEMINI):}
+
+Per verificare la rapida crescita del numero di condizionamento $K(V)$ della matrice di Vandermonde al variare di $n$, possiamo scrivere un semplice script in MATLAB o GNU Octave. 
+
+Il comando \texttt{vander(x)} genera la matrice associata al vettore delle ascisse \texttt{x}, mentre \texttt{cond(V)} ne calcola il numero di condizionamento in norma 2. Ricordiamo che per un polinomio di grado $n$, abbiamo bisogno di $n+1$ punti (ascisse).
+
+\begin{verbatim}
+% Vettori dei gradi n richiesti
+n_val = [2, 3, 5, 10];
+
+fprintf(' n | Condizionamento K(V)\n');
+fprintf('-------------------------\n');
+
+for i = 1:length(n_val)
+    n = n_val(i);
+    
+    % Creazione di n+1 ascisse equidistanti nell'intervallo [0, 1]
+    x = (0:n)/n; 
+    
+    % Creazione della matrice di Vandermonde
+    V = vander(x);
+    
+    % Calcolo del numero di condizionamento
+    K = cond(V);
+    
+    % Stampa a video dei risultati
+    fprintf('%2d | %e\n', n, K);
+end
+\end{verbatim}
+
+Eseguendo questo codice, otteniamo il seguente output che conferma la tendenza vista a lezione:
+
+\begin{verbatim}
+ n | Condizionamento K(V)
+-------------------------
+ 2 | 1.488035e+01
+ 3 | 1.106456e+02
+ 5 | 5.860162e+03
+10 | 3.486657e+08 
+\end{verbatim}
+
+\textbf{Osservazione computazionale:} I primi tre valori rispecchiano perfettamente quelli tabulati negli appunti ($\sim 15$, $\sim 100$ e $\sim 5 \cdot 10^3$). Per $n=10$, il calcolatore restituisce un valore dell'ordine di $10^8$. L'ordine di grandezza $\sim 10^{17}$ indicato a lezione per $n=10$ è probabilmente un'iperbole didattica del professore (o fa riferimento a $n$ maggiori, come $n=20$) per indicare che la matrice diventa numericamente \textit{singolare}, raggiungendo il limite della precisione di macchina (che in doppia precisione è circa $10^{-16}$). In ogni caso, il concetto fondamentale rimane: il condizionamento esplode, rendendo l'algoritmo instabile.
+
+\vspace{0.5cm}
+\subsubsection{Forma di Lagrange e forma di Newton del polinomio interpolante}
 Per ovviare al precedente problema, occorre utilizzare una differente base polinomiale per rappresentare $p(x)$. 
 
 \textbf{OSS (NB)}: Anche se cambiamo base per rappresentare $p(x)$, il polinomio rimane lo stesso, perché esso è unico.
@@ -120,7 +166,7 @@ $$L_{in}(x) = \prod_{\substack{j=0 \\ j \neq i}}^{n} \frac{x - x_j}{x_i - x_j}, 
 \end{enumerate}
 
 \begin{definition}
-La (3) definisce la forma di Lagrange del polinomio interpolante.
+La (3) definisce la \textbf{forma di Lagrange} del polinomio interpolante.
 \end{definition}
 
 
@@ -154,7 +200,7 @@ $$\sum_{i=0}^{n} c_{in} \cdot f_i = \sum_{i=0}^{n} \frac{f_i}{\prod_{\substack{j
 A questo punto, ci poniamo la seguente domanda:
 Se definiamo $p_r(x) \in \Pi_r$ il polinomio interpolante $f(x)$ sulle $r+1$ ascisse $x_0, \dots, x_r$, è possibile definire in modo incrementale $p_r(x)$ a partire da $p_{r-1}(x)$, che è il polinomio interpolante $f(x)$, di grado al più $r-1$, sulle ascisse $x_0, \dots, x_{r-1}$?
 
-A questo fine, osserviamo che la base di Lagrange si presta male a questo fine. Infatti:
+A questo fine, osserviamo che la base di Lagrange si presta male a questo fine (cioé se scopriamo un nuovo punto $x_r$ e il suo valore $f_r$, dobbiamo buttare via tutto e ricostruire da capo il polinomio interpolante $p_r(x)$). Infatti:
 $$p_r(x) = \sum_{i=0}^{r} f_i L_{ir}(x), \quad L_{ir}(x) = \prod_{\substack{j=0 \\ j \neq i}}^{r} \frac{x-x_j}{x_i-x_j}$$
 mentre:
 $$p_{r-1}(x) = \sum_{i=0}^{r-1} f_i L_{i,r-1}(x), \quad L_{i,r-1}(x) = \prod_{\substack{j=0 \\ j \neq i}}^{r-1} \frac{x-x_j}{x_i-x_j}, \quad i=0,\dots,r-1$$
@@ -220,7 +266,7 @@ $f[x_0, \dots, x_r]$, $r=0, \dots, n$ definita nella (6) è detta \textbf{differ
 \end{definition}
 
 \textbf{Osservazione}: Dalla (5) si ottiene che:
-$$p_n(x) = \sum_{r=0}^{n} f[x_0, \dots, x_r] \omega_r(x) \quad (9)$$
+$$p_n(x) = \sum_{r=0}^{n} f[x_0, \dots, x_r] \omega_r(x) \quad (9)$$ dove $\omega_r(x) = \omega_r-1(x)(x-x_{r-1})$ e $\omega_0(x) \equiv 1$.
 
 \begin{definition}
 La (9) definisce la \textbf{forma di Newton} del polinomio interpolante.
@@ -231,3 +277,269 @@ $$p_n(x) = \sum_{i=0}^{n} f_i L_{in}(x) = \sum_{i=0}^{n} f[x_0, \dots, x_i] \ome
 ovvero, la forma di Lagrange e quella di Newton del polinomio interpolante sono \textbf{algebricamente equivalenti}.
 
 \textbf{Osservazione}: Questo non è vero in aritmetica finita.
+
+
+%4/03/2026
+\subsubsection*{Proprietà differenze divise:}
+
+\begin{enumerate}
+    \item se $f(x)$ e $g(x)$ sono funzioni e $\alpha, \beta \in \mathbb{R}$ allora $(\alpha f + \beta g)[x_0, \dots, x_i] = \alpha f[x_0, \dots, x_i] + \beta g[x_0, \dots, x_i] \textbf{(Linearità)}$
+    
+    \item se $(i_0, \dots, i_r)$ è una permutazione di $(0, \dots, r)$ allora $f[x_{i_0}, \dots, x_{i_r}] = f[x_0, \dots, x_r] \\ \textbf{(simmetria riguardo agli argomenti)}$
+    
+    DIM: permutiamo solo gli elementi della sommatoria
+    
+    \item $f(x)$ polinomio di grado $k$: $f(x) = \sum_{i=0}^{k} a_i x^i$ e sia $p(x) = \sum_{i=0}^{n} f[x_0, \dots, x_i] \omega_i(x)$ il suo polinomio interpolante di grado $n$. Allora:
+    $$f[x_0, \dots, x_n] = \begin{cases} 
+    a_k, & \text{se } k=n \\ 
+    0, & \text{se } k<n 
+    \end{cases}$$
+\end{enumerate}
+
+Infatti, se $k=n$ allora per l'unicità del polinomio interpolante, avremo che $f(x) \equiv p(x)$. Pertanto, i coefficienti principali, rispettivamente $a_n$ e $f[x_0, \dots, x_n]$ devono coincidere e quindi:
+$$f[x_0, \dots, x_n] = a_n \quad (n=k)$$
+
+Tuttavia, se $n>k$ anche $p(x) \equiv f(x)$. Quest'ultimo può essere riscritto come:
+$$f(x) = \sum_{i=0}^{k} a_i x^i + 0 \cdot x^{k+1} + \dots + 0 \cdot x^n \equiv p(x)$$ (lo 0 finale è il coefficiente principale di $p(x)$, ovvero $f[x_0, \dots, x_n]$).\\ 
+
+\textbf{N.B.} Ricordare che $\forall n \ge k$ il polinomio di grado $n$ che interpola un polinomio di grado $k$ coincide con quest'ultimo, per l'unicità del polinomio interpolante.
+
+\vspace{0.5cm}
+\begin{enumerate}
+    \setcounter{enumi}{3}
+    \item Se $f(x) \in C^{(r)}[a,b]$ allora:
+    $$f[x_0, \dots, x_r] = \frac{f^{(r)}(\xi)}{r!}$$
+    dove $\xi \in [\min_i x_i, \max_i x_i]$.
+\end{enumerate}
+
+\textbf{OSS:} Questa proprietà continua a valere anche nel caso di ascisse coincidenti. Ad esempio:
+$$f[x_0, x_0] = \lim_{x_1 \to x_0} f[x_0, x_1] = \lim_{x_1 \to x_0} \frac{f(x_1)-f(x_0)}{x_1-x_0} = f'(x_0)$$
+ovvero utilizzando un procedimento al limite.
+
+\textbf{OSS:} Cosa succede se tutte le ascisse sono coincidenti $x_i \equiv x_0$, $i=0,\dots,n$?
+Abbiamo che:
+$$f[\underbrace{x_0, \dots, x_0}_{r+1 \text{ volte}}] = \frac{f^{(r)}(x_0)}{r!}$$
+inoltre:
+$$\omega_r(x) = \prod_{i=0}^{r-1}(x-x_i) = (x-x_0)^r$$
+Pertanto, se $x_0 = x_1 = \dots = x_n$ otteniamo che:
+$$p(x) = \sum_{r=0}^{n} f[\underbrace{x_0, \dots, x_0}_{r+1 \text{ volte}}] \omega_r(x) = \sum_{r=0}^{n} \frac{f^{(r)}(x_0)}{r!} (x-x_0)^r$$
+che è esattamente il polinomio di Taylor di grado $n$ di $f(x)$, centrato in $x_0$.
+
+\vspace{0.5cm}
+\begin{enumerate}
+    \setcounter{enumi}{4}
+    \item $$f[x_0, \dots, x_r] = \frac{f[x_1, \dots, x_r] - f[x_0, \dots, x_{r-1}]}{x_r - x_0} \quad (10)$$
+\end{enumerate}
+
+\textbf{OSS:} Tenendo conto che $f[x_i] = f_i$ per $i=0,\dots,n$, questa proprietà ci consente di calcolare in modo incrementale le differenze divise richieste per il calcolo del polinomio interpolante in forma di Newton.
+
+\vspace{0.5cm}
+\textbf{Dimostriamo la proprietà (1):}
+\begin{align*}
+    &\frac{1}{x_r-x_0} \left( f[x_1, \dots, x_r] - f[x_0, \dots, x_{r-1}] \right) \\
+    &= \frac{1}{x_r-x_0} \left( \sum_{k=1}^{r} \frac{f_k}{\prod_{\substack{j=1 \\ j \neq k}}^{r}(x_k-x_j)} - \sum_{k=0}^{r-1} \frac{f_k}{\prod_{\substack{j=0 \\ j \neq k}}^{r-1}(x_k-x_j)} \right) \\
+    &= \frac{1}{x_r-x_0} \left[ \frac{f_r}{\prod_{\substack{j=1 \\ j \neq r}}^{r}(x_r-x_j)} - \frac{f_0}{\prod_{\substack{j=0 \\ j \neq 0}}^{r-1}(x_0-x_j)} + \sum_{k=1}^{r-1} \frac{f_k}{\prod_{\substack{j=1 \\ j \neq k}}^{r-1}(x_k-x_j)} \left( \frac{1}{x_k-x_r} - \frac{1}{x_k-x_0} \right) \right] = (*)
+\end{align*}
+
+Analizziamo i singoli termini dentro la parentesi quadra, moltiplicati per $\frac{1}{x_r-x_0}$:
+\begin{align*}
+    \frac{1}{x_r-x_0} \frac{f_r}{\prod_{\substack{j=1 \\ j \neq r}}^{r}(x_r-x_j)} &= \frac{f_r}{\prod_{\substack{j=0 \\ j \neq r}}^{r}(x_r-x_j)} \\
+    -\frac{1}{x_r-x_0} \frac{f_0}{\prod_{\substack{j=0 \\ j \neq 0}}^{r-1}(x_0-x_j)} &= \frac{1}{x_0-x_r} \frac{f_0}{\prod_{\substack{j=0 \\ j \neq 0}}^{r-1}(x_0-x_j)} = \frac{f_0}{\prod_{\substack{j=0 \\ j \neq 0}}^{r}(x_0-x_j)} \\
+    \frac{1}{x_r-x_0} \sum_{k=1}^{r-1} \frac{f_k}{\prod_{\substack{j=1 \\ j \neq k}}^{r-1}(x_k-x_j)} \frac{x_k-x_0 - x_k + x_r}{(x_k-x_r)(x_k-x_0)} &= \sum_{k=1}^{r-1} \frac{f_k}{\prod_{\substack{j=0 \\ j \neq k}}^{r}(x_k-x_j)}
+\end{align*}
+
+Unendo tutti i termini otteniamo:
+$$\implies (*) = \sum_{k=0}^{r} \frac{f_k}{\prod_{\substack{j=0 \\ j \neq k}}^{r}(x_k-x_j)} \equiv f[x_0, \dots, x_r]$$
+
+Quest'ultima proprietà ci consente di calcolare in modo efficiente le differenze divise necessarie per il calcolo del polinomio interpolante in forma di Newton.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{ccccc}
+0 & 1 & 2 & $\dots$ & $n$ \\
+\hline
+$x_0$ & $f[x_0]$ & & & \\
+$x_1$ & $f[x_1]$ & $f[x_0, x_1]$ & & \\
+$x_2$ & $f[x_2]$ & $f[x_1, x_2]$ & $f[x_0, x_1, x_2]$ & \\
+$\vdots$ & $\vdots$ & $\vdots$ & $\vdots$ & $\ddots$ \\
+$x_n$ & $f[x_n]$ & $\dots$ & $\dots$ & $f[x_0, \dots, x_n]$ \\
+\end{tabular}
+\end{center}
+
+\textbf{OSS:} Se calcoliamo le colonne di questa matrice triangolare dal basso verso l'alto, possiamo sovrascrivere i risultati negli elementi adiacenti a sinistra. Pertanto, sarà sufficiente un vettore di $n+1$ elementi. 
+Gli elementi sulla diagonale principale sono le differenze divise necessarie per il calcolo del polinomio in forma di Newton.
+
+
+
+
+
+%05/03/2026
+\vspace{0.5cm}
+
+Data $f:[a,b] \rightarrow \mathbb{R}$ e date $a \le x_0 < x_1 < \dots < x_n \le b$ \\
+Allora $\exists! p(x) \in \Pi_n : p(x_i) = f(x_i) \equiv f_i$, $i=0, \dots, n$.
+
+\begin{itemize}
+    \item[(1)] Forma di Lagrange di $p(x)$
+    \item[(2)] Forma di Newton di $p(x)$:
+    $$p(x) = \sum_{i=0}^{n} f[x_0, \dots, x_i] \omega_i(x)$$
+    $$\begin{cases}
+    \omega_i(x) = \omega_{i-1}(x) \cdot (x-x_{i-1}), & i \ge 1 \\
+    \omega_0(x) \equiv 1
+    \end{cases}$$
+\end{itemize}
+
+i cui coefficienti sono le differenze divise di $f(x)$ sulle ascisse in argomento.
+
+Utilizzando la proprietà ``incrementale'' per il calcolo delle differenze divise:
+$$
+(3) \quad
+\begin{cases} 
+f[x_r] = f(x_r) \equiv f_r \\ 
+f[x_0, \dots, x_r] = \frac{f[x_1, \dots, x_r] - f[x_0, \dots, x_{r-1}]}{x_r - x_0}
+\end{cases}
+$$
+Esaminiamo, in dettaglio, il caso $n=2$ prima di derivare una procedura generale per il calcolo delle differenze divise nel caso $n$ generico.
+
+Caso $n=2$:
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{l|lll}
+0 & $x_0$ & $f[x_0] = f_0$ & \\
+1 & $x_1$ & $f[x_1] = f_1 \xrightarrow{\hspace{1cm}} f[x_0, x_1] = \frac{f[x_1]-f[x_0]}{x_1-x_0}$ & \\
+2 & $x_2$ & $f[x_2] = f_2 \xrightarrow{\hspace{1cm}} f[x_1, x_2] = \frac{f[x_2]-f[x_1]}{x_2-x_1} \xrightarrow{\hspace{1cm}} f[x_0, x_1, x_2] = \frac{f[x_1, x_2]-f[x_0, x_1]}{x_2-x_0}$
+\end{tabular}
+\end{center}
+
+(4) Scriviamo, a partire da questo, un pseudo-codice Matlab che implementa questo algoritmo nel caso generale.
+Poiché i vettori in ingresso hanno indicizzazione a partire da $1$, i vettori in ingresso saranno $x$ e $f$ di lunghezza $n+1$.
+
+\begin{verbatim}
+for j = 1:n
+    for i = n+1:-1:j+1
+        f(i) = (f(i) - f(i-1)) / (x(i) - x(i-j));
+    end
+end
+\end{verbatim}
+
+\textbf{OSS:} Pertanto, questo pseudo-codice è, evidentemente, funzionante in modo corretto se e solo se il vettore $x$ contiene elementi tra loro distinti. Questo controllo, a qualche livello, va effettuato prima di eseguire le precedenti istruzioni.
+
+Vediamo qual è il costo computazionale dell'algoritmo (4).
+
+\textbf{Occupazione di memoria:} 2 vettori di lunghezza $n+1$ ($x$ e $f$). Pertanto, la complessità è lineare in $n$.
+
+\textbf{Numero di operazioni:} abbiamo 3 operazioni elementari nel ciclo più interno. Pertanto, otteniamo:
+$$3 \sum_{j=1}^{n} (n - j + 1) = 3 \sum_{j=1}^{n} j = 3 \frac{n(n+1)}{2} = \mathcal{O}(n^2)$$
+
+\textbf{OSS:} 
+$$\sum_{j=0}^{n} j^k \approx \int_{0}^{n} x^k \, dx = \frac{n^{k+1}}{k+1}$$
+
+Quindi, complessità quadratica nel grado del polinomio interpolante.\\
+
+Avendo compreso come calcolare in modo efficiente le differenze divise in (1), vediamo come calcolare efficientemente il polinomio $p(x)$.
+
+Per ottenere una soluzione di questo problema, consideriamo, preliminarmente, un problema più semplice, ovvero il calcolo di un polinomio di grado $n$ rispetto alla base delle potenze:
+$$(5) \quad p(x) = \sum_{i=0}^{n} a_i x^i$$
+
+es: $n=2$
+$$p(x) = a_0 + a_1 x + a_2 x^2$$
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{l|l}
+$p = a_2$ & $a_2$ \\
+$p \leftarrow p \cdot x + a_1$ & $a_2 x + a_1$ \\
+$p \leftarrow p \cdot x + a_0$ & $(a_2 x + a_1)x + a_0 = a_2 x^2 + a_1 x + a_0$
+\end{tabular}
+\end{center}
+
+In generale, per il polinomio in (5) avremo che:
+\begin{verbatim}
+p = a_n
+per i = 1:n
+    p = p * x + a_{n-i}
+fine per
+\end{verbatim}
+$\implies p$ conterrà, alla fine, il valore di $p(x)$.
+
+Questo è l'algoritmo di Horner per il calcolo di un polinomio. La complessità è $3n$ flops.
+
+Pseudo-codice Matlab (al solito, i vettori hanno componenti numerate da $1$ a $n+1$ invece che da $0$ a $n$):
+\begin{verbatim}
+p = a(n+1);
+for i = n:-1:1
+    p = p * x + a(i);
+end
+\end{verbatim}
+
+\textbf{N.B.:} se volessimo calcolare il polinomio in un vettore di punti, è sufficiente sostituire l'operazione nel ciclo con:
+\begin{verbatim}
+    p = p .* x + a(i);
+\end{verbatim}
+
+Questo algoritmo può essere generalizzato al caso del polinomio interpolante (1) utilizzando la definizione incrementale (2) della base di Newton.
+
+\begin{verbatim}
+p = f[x_0, ..., x_n]
+per i = 1:n
+    p = p * (x - x_{n-i}) + f[x_0, ..., x_{n-i}]
+fine per
+\end{verbatim}
+
+In pseudo-codice Matlab, se $x$ e $f$ sono i vettori con le ascisse e le differenze divise (vedi (4)), mentre $xx$ è il vettore di punti in cui calcolare il polinomio:
+
+\begin{verbatim}
+p = f(n+1);
+for i = n:-1:1
+    p = p .* (xx - x(i)) + f(i);
+end
+\end{verbatim}
+
+dove, al solito, il `.*` è utilizzato per calcolare il polinomio interpolante in un vettore $xx$ di ascisse. Pertanto con un costo di $3n$ flops per ogni punto in cui viene calcolato il polinomio interpolante.
+
+\vspace{1cm}
+
+\begin{center}
+\begin{tikzpicture}[scale=1.5]
+    % Assi
+    \draw[->, thick] (0,0) -- (8,0) node[right] {$x$};
+    \draw[->, thick] (0,0) -- (0,4);
+    
+    % Nodi
+    \draw (1,0) node[below] {$x_0 \equiv a$} -- (1,0.1);
+    \draw (3,0) node[below] {$x_1$} -- (3,0.1);
+    \draw (5,0) node[below] {$x_2$} -- (5,0.1);
+    \draw (7,0) node[below] {$x_3 \equiv b$} -- (7,0.1);
+    
+    % Linee tratteggiate e punti di intersezione
+    \draw[dashed, gray] (1,0) -- (1,1.5);
+    \fill[black] (1,1.5) circle (1.5pt);
+    
+    \draw[dashed, gray] (3,0) -- (3,2.8);
+    \fill[black] (3,2.8) circle (1.5pt);
+    
+    \draw[dashed, gray] (5,0) -- (5,1.2);
+    \fill[black] (5,1.2) circle (1.5pt);
+    
+    \draw[dashed, gray] (7,0) -- (7,3.5);
+    \fill[black] (7,3.5) circle (1.5pt);
+
+    % Funzione f(x) e p(x)
+    \draw[blue, thick] (1,1.5) to[out=60, in=180] (3,2.8) to[out=0, in=150] (5,1.2) to[out=-30, in=200] (7,3.5);
+    \node[blue] at (2, 2.5) {$f(x)$};
+
+    \draw[orange, thick] (1,1.5) to[out=40, in=190] (3,2.8) to[out=10, in=130] (5,1.2) to[out=-50, in=220] (7,3.5);
+    \node[orange] at (6, 2) {$p(x)$};
+
+\end{tikzpicture}
+\end{center}
+
+$p(x)$ è il polinomio interpolante $f(x)$ nelle ascisse assegnate.
+Se definiamo (funzione dell'errore):
+$$e(x) = f(x) - p(x)$$
+ricordando che $p(x_i) = f(x_i)$, $i=0,\dots,n$, otteniamo che:
+$$e(x_i) = 0, \quad i=0,\dots,n.$$
+
+Cosa succede se $x \neq x_i$?
+
+\end{document}
