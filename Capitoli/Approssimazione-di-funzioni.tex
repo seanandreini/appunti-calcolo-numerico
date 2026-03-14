@@ -144,7 +144,7 @@ Eseguendo questo codice, otteniamo il seguente output che conferma la tendenza v
 \textbf{Osservazione computazionale:} I primi tre valori rispecchiano perfettamente quelli tabulati negli appunti ($\sim 15$, $\sim 100$ e $\sim 5 \cdot 10^3$). Per $n=10$, il calcolatore restituisce un valore dell'ordine di $10^8$. L'ordine di grandezza $\sim 10^{17}$ indicato a lezione per $n=10$ è probabilmente un'iperbole didattica del professore (o fa riferimento a $n$ maggiori, come $n=20$) per indicare che la matrice diventa numericamente \textit{singolare}, raggiungendo il limite della precisione di macchina (che in doppia precisione è circa $10^{-16}$). In ogni caso, il concetto fondamentale rimane: il condizionamento esplode, rendendo l'algoritmo instabile.
 
 \vspace{0.5cm}
-\subsubsection{Forma di Lagrange e forma di Newton del polinomio interpolante}
+\subsection{Forma di Lagrange e forma di Newton del polinomio interpolante}
 Per ovviare al precedente problema, occorre utilizzare una differente base polinomiale per rappresentare $p(x)$. 
 
 \textbf{OSS (NB)}: Anche se cambiamo base per rappresentare $p(x)$, il polinomio rimane lo stesso, perché esso è unico.
@@ -535,6 +535,8 @@ dove, al solito, il `.*` è utilizzato per calcolare il polinomio interpolante i
 \end{center}
 
 $p(x)$ è il polinomio interpolante $f(x)$ nelle ascisse assegnate.
+
+\subsubsection{Errore di interpolazione}
 Se definiamo (funzione dell'errore):
 $$e(x) = f(x) - p(x)$$
 ricordando che $p(x_i) = f(x_i)$, $i=0,\dots,n$, otteniamo che:
@@ -542,4 +544,386 @@ $$e(x_i) = 0, \quad i=0,\dots,n.$$
 
 Cosa succede se $x \neq x_i$?
 
-\end{document}
+
+
+
+
+
+
+
+%11/03/2026
+
+\vspace{0.4cm}
+\begin{teorema}
+    L'errore di interpolazione si può esprimere come:
+\begin{equation} \label{eq:err1}
+    e(x) = f[x_0, \dots, x_n, x] w_{n+1}(x)
+\end{equation}
+con $w_{n+1}(x) = \prod_{j=0}^{n} (x - x_j)$ che è il polinomio monico le cui radici sono le ascisse di interpolazione.
+\end{teorema}
+
+
+\begin{proof}
+Se $x = x_i \implies e(x_i) = 0$, perché $w_{n+1}(x_i) = 0$, $\forall i=0,\dots,n$, quindi la \eqref{eq:err1} è verificata.
+
+Se $x = \hat{x} \notin \{x_0, \dots, x_n\}$, allora, sfruttando la costruzione incrementale del polinomio interpolante di Newton, possiamo definire $\hat{p}(x) \in \Pi_{n+1}$ che interpola $f(x)$ in $x_0, x_1, \dots, x_n, \hat{x}$ come:
+\begin{equation} \label{eq:err2}
+    \hat{p}(x) = p(x) + f[x_0, \dots, x_n, \hat{x}] w_{n+1}(x)
+\end{equation}
+Il termine $p(x)$ è il polinomio interpolante in $x_0, \dots, x_n$, mentre l'ultimo termine è il pezzo "aggiuntivo" che dà l'interpolazione in $\hat{x}$.
+
+Pertanto:
+$$ \hat{p}(x_i) = f(x_i), \quad i=0, \dots, n $$
+e
+\begin{equation} \label{eq:err3}
+    \hat{p}(\hat{x}) = f(\hat{x})
+\end{equation}
+ovvero, tenendo conto della \eqref{eq:err2}, si ottiene:
+$$ p(\hat{x}) + f[x_0, \dots, x_n, \hat{x}] w_{n+1}(\hat{x}) = f(\hat{x}) $$
+Da questo ricaviamo che:
+$$ f[x_0, \dots, x_n, \hat{x}] w_{n+1}(\hat{x}) = f(\hat{x}) - p(\hat{x}) \equiv e(\hat{x}) $$
+Osservando che $\hat{x}$ è generico, si ottiene, infine:
+$$ e(x) = f[x_0, \dots, x_n, x] w_{n+1}(x) $$
+ovvero la tesi \eqref{eq:err1}.
+\end{proof}
+
+\vspace{0.4cm}
+\textbf{Corollario:}
+Se $f \in \mathcal{C}^{(n+1)}$ su un intervallo che contiene le ascisse di interpolazione ed il punto $x$ considerato, allora:
+\begin{equation} \label{eq:err_cor}
+    e(x) = \frac{f^{(n+1)}(\xi_x)}{(n+1)!} w_{n+1}(x)
+\end{equation}
+con $\xi_x \in I(x_0, \dots, x_n, x)$, avendo denotato con $I(x_0, \dots, x_n, x)$ il più piccolo intervallo che contiene le ascisse in argomento.
+
+\begin{proof}
+Infatti, l'equazione \eqref{eq:err_cor} deriva dalla \eqref{eq:err1} che, nelle ipotesi fatte, considerando che:
+$$ f[x_0, \dots, x_n, x] = \frac{f^{(n+1)}(\xi_x)}{(n+1)!} $$
+con $\xi_x$ opportuno.
+\end{proof}
+
+\newpage
+\textbf{OSS.}
+\begin{enumerate}
+    \item Se $f(x) \in \Pi_n \implies f^{(n+1)}(x) \equiv 0 \implies e(x) = f(x) - p(x) \equiv 0$ ovvero, $f(x) \equiv p(x)$, per l'unicità del polinomio interpolante, come già osservato.
+    \item Dalla \eqref{eq:err_cor} otteniamo che l'errore $e(x)$ è dato dal prodotto di 2 termini:
+    \begin{itemize}
+        \item $\frac{f^{(n+1)}(\xi_x)}{(n+1)!}$: questo dipende da quanto è "buona" la funzione $f(x)$. Il fattoriale al denominatore significa che le derivate diventano "piccole" al crescere dell'ordine.
+        \item $w_{n+1}(x) = \prod_{i=0}^{n} (x - x_i)$: che dipende esclusivamente dalla scelta delle ascisse di interpolazione.
+    \end{itemize}
+\end{enumerate}
+
+Tuttavia, se $x \gg \max \{x_i\}$ oppure $x \ll \min \{x_i\}$, allora $w_{n+1}(x) \approx x^{n+1}$ ($w_{n+1}(x)$ diventa molto grande al crescere di $n$). Pertanto, $p(x)$ è un'approssimazione "spendibile" di $f(x)$ solo se $x$ è prossimo (meglio se all'interno) dell'intervallo che contiene le ascisse di interpolazione.
+
+\begin{center}
+    \begin{tikzpicture}[scale=1.2]
+        % Assi
+        \draw[->, thick, red!70!black] (-0.5,0) -- (8,0) node[right] {$x$};
+        \draw[->, thick, red!70!black] (0,-1) -- (0,4) node[above] {$y$};
+        
+        % Punti x_i
+        \draw[thick] (1.5, 0.1) -- (1.5, -0.1) node[below] {$x_0$};
+        \draw[thick] (3, 0.1) -- (3, -0.1) node[below] {$x_1$};
+        \draw[thick] (4.5, 0.1) -- (4.5, -0.1) node[below] {$x_2$};
+        \node at (5.5, -0.3) {$\dots$};
+        \draw[thick] (6.5, 0.1) -- (6.5, -0.1) node[below] {$x_n$};
+        
+        % Polinomio p(x) in arancione
+        \draw[orange, thick] plot [smooth, tension=0.7] coordinates {(-0.5,-0.8) (1.5,1) (3,2.2) (4.5,2.1) (6.5,3.2) (7.5,1.5)};
+        
+        % Funzione f(x) in verde scuro
+        \draw[teal, thick] plot [smooth, tension=0.6] coordinates {(1.3,0.7) (1.5,1) (2.5,2.0) (3,2.2) (3.8,2.25) (4.5,2.1) (5.5,2.9) (6.5,3.2)} node[right] {$f(x)$};
+        
+        % Punti di intersezione
+        \filldraw[black] (1.5,1) circle (1.5pt);
+        \filldraw[black] (3,2.2) circle (1.5pt);
+        \filldraw[black] (4.5,2.1) circle (1.5pt);
+        \filldraw[black] (6.5,3.2) circle (1.5pt);
+    \end{tikzpicture}
+    \end{center}
+
+\subsubsection{Interpolazione di Hermite}
+Supponiamo, in questo caso, di ricercare il polinomio interpolante, di grado $2n+1$ su $2n+2$ ascisse distinte, che numeriamo come:
+$$ x_0 < x_{\frac{1}{2}} < x_1 < x_{1+\frac{1}{2}} < \dots < x_n < x_{n+\frac{1}{2}} $$
+Sia $f(x)$ la funzione interpolanda su tali ascisse. Pertanto, sappiamo che $\exists! p(x) \in \Pi_{2n+1}$ tale che:
+\begin{equation} \label{eq:hermite1}
+    p(x_i) = f(x_i) \quad \text{e} \quad p(x_{i+\frac{1}{2}}) = f(x_{i+\frac{1}{2}}), \quad i=0, \dots, n
+\end{equation}
+
+\textbf{Domanda:} Cosa succede a $p(x)$ se $\forall i=0, \dots, n$, si ha $x_{i+\frac{1}{2}} \to x_i$?
+
+Per rispondere correttamente a questa domanda riscriviamo la \eqref{eq:hermite1} come:
+$$ p(x_i) = f(x_i) $$
+e
+\begin{equation} \label{eq:hermite2}
+    \frac{p(x_{i+\frac{1}{2}}) - p(x_i)}{x_{i+\frac{1}{2}} - x_i} = \frac{f(x_{i+\frac{1}{2}}) - f(x_i)}{x_{i+\frac{1}{2}} - x_i}, \quad i=0, \dots, n
+\end{equation}
+A questo punto, se facciamo il limite nella seconda espressione per $x_{i+\frac{1}{2}} \to x_i$, $\forall i=0, \dots, n$, abbiamo dimostrato che $\exists$ un polinomio $p(x) \in \Pi_{2n+1}$ tale che la \eqref{eq:hermite2} diventa:
+\begin{equation} \label{eq:hermite3}
+    p(x_i) = f(x_i) \quad \text{e} \quad p'(x_i) = f'(x_i), \quad i=0, \dots, n
+\end{equation}
+
+\vspace{0.4cm}
+\begin{definition}
+Il polinomio $p(x) \in \Pi_{2n+1}$ che soddisfa le condizioni di interpolazione \eqref{eq:hermite3} è detto \textbf{polinomio interpolante di Hermite}.
+\end{definition}
+
+\textbf{OSS.} In altri termini, il polinomio interpolante di Hermite interpola, nelle ascisse di interpolazione, sia la funzione $f(x)$ che la sua derivata prima. Pertanto ha la stessa retta tangente nelle ascisse di interpolazione.
+
+\begin{center}
+\begin{tikzpicture}[scale=1.5]
+    % Assi
+    \draw[->, thick] (-0.2, 0) -- (2*pi+0.5, 0) node[right] {$x$};
+    \draw[->, thick] (0, -1.5) -- (0, 1.5) node[above] {$y$};
+    
+    % Punti nodali
+    \node[below left, text=red] at (0,0) {$0$};
+    \node[below, text=red] at (pi,0) {$\pi$};
+    \node[below, text=red] at (2*pi,0) {$2\pi$};
+    
+    % Funzione f(x) = sin(x) (arancione)
+    \draw[orange, thick, smooth, samples=100, domain=0:2*pi] plot (\x, {sin(\x r)});
+    
+    % Polinomio di Hermite approssimato (verde scuro)
+    % (In questo schema grafico il polinomio di Hermite segue la sinusoide quasi perfettamente
+    % poiché condivide radici e tangenti, al contrario del polinomio classico che sarebbe identicamente nullo)
+    \draw[teal, thick, smooth, samples=100, domain=0:2*pi] plot (\x, {sin(\x r) - 0.08*sin(2*\x r)}); 
+    
+    % Punti rossi
+    \filldraw[red] (0,0) circle (1pt);
+    \filldraw[red] (pi,0) circle (1pt);
+    \filldraw[red] (2*pi,0) circle (1pt);
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.4cm}
+Se $f(x) = \sin(x)$ e $x_i = i\pi$, per $i=0, 1, 2$, allora il polinomio interpolante (classico) su tali ascisse è zero!
+Questo \textbf{non} è vero per il polinomio interpolante di Hermite.
+%Vedremo in che modo si possa calcolare efficientemente il polinomio interpolante di Hermite. In particolare, ne vedremo la forma di Newton.
+
+
+
+
+
+
+
+
+
+%12/03/2026
+\vspace{0.4cm}
+Per derivare la forma di Newton di questo polinomio, facciamo un passo indietro considerando, formalmente, le $2n+2$ ascisse:
+$$ a \le x_0 < x_{1/2} < x_1 < x_{1+1/2} < \dots < x_n < x_{n+1/2} \le b $$
+
+Fissiamo, ad esempio, il caso $n=2$, abbiamo che il relativo polinomio interpolante è dato da:
+\begin{align*}
+p(x) &= f[x_0] + f[x_0, x_{1/2}](x-x_0) + f[x_0, x_{1/2}, x_1](x-x_0)(x-x_{1/2}) \\
+&\quad + f[x_0, x_{1/2}, x_1, x_{1+1/2}](x-x_0)(x-x_{1/2})(x-x_1) \\
+&\quad + f[x_0, x_{1/2}, x_1, x_{3/2}, x_2](x-x_0)(x-x_{1/2})(x-x_1)(x-x_{3/2}) \\
+&\quad + f[x_0, x_{1/2}, x_1, x_{3/2}, x_2, x_{5/2}](x-x_0)(x-x_{1/2})(x-x_1)(x-x_{3/2})(x-x_2)
+\end{align*}
+
+Se adesso poniamo $x_{1/2} = x_0$, $x_{3/2} = x_1$, $x_{5/2} = x_2$, otteniamo la forma di Newton del polinomio di Hermite corrispondente:
+\begin{align*}
+    p_H(x) &= f[x_0] + f[x_0, x_0](x-x_0) + f[x_0, x_0, x_1](x-x_0)(x-x_0) \\
+    &\quad + f[x_0, x_0, x_1, x_1](x-x_0)(x-x_0)(x-x_1) \\
+    &\quad + f[x_0, x_0, x_1, x_1, x_2](x-x_0)(x-x_0)(x-x_1)(x-x_1) \\
+    &\quad + f[x_0, x_0, x_1, x_1, x_2, x_2](x-x_0)(x-x_0)(x-x_1)(x-x_1)(x-x_2)
+    \end{align*}
+
+\underline{\textbf{OSS}}
+\begin{enumerate}
+    \item Il calcolo del polinomio, note le differenze divise, si può far agevolmente mediante l'algoritmo di Horner generalizzato, semplicemente duplicando le ascisse di interpolazione.
+    \item Il calcolo delle differenze divise, visto che ci sono ascisse ripetute in argomento, richiede qualche modifica invece dell'algoritmo classico per il polinomio interpolante.
+\end{enumerate}
+
+A questo fine, costruiamo (formalmente) la tabella triangolare per il calcolo delle differenze divise. Per semplicità, consideriamo il caso $n=1$ che è ancora rappresentativo:
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{c|cccc}
+ & 0 & 1 & 2 & 3 \\
+\hline
+$x_0$ & $f[x_0]$ & & & \\
+$x_0$ & $f[x_0]$ & $f[x_0, x_0]$ & & \\
+$x_1$ & $f[x_1]$ & $f[x_0, x_1]$ & $f[x_0, x_0, x_1]$ & \\
+$x_1$ & $f[x_1]$ & $f[x_1, x_1]$ & $f[x_0, x_1, x_1]$ & $f[x_0, x_0, x_1, x_1]$ \\
+\end{tabular}
+\end{center}
+
+Partendo dall'ultima colonna, abbiamo che:
+$$ f[x_0, x_0, x_1, x_1] = \frac{f[x_0, x_1, x_1] - f[x_0, x_0, x_1]}{x_1 - x_0} \quad \text{\textcolor{green}{\checkmark}} $$
+
+Passando, quindi, alla penultima colonna, abbiamo che:
+$$ f[x_0, x_0, x_1] = \frac{f[x_0, x_1] - f[x_0, x_0]}{x_1 - x_0} \quad \text{\textcolor{green}{\checkmark}} $$
+$$ f[x_0, x_1, x_1] = \frac{f[x_1, x_1] - f[x_0, x_1]}{x_1 - x_0} \quad \text{\textcolor{green}{\checkmark}} $$
+
+Passiamo, infine, alla colonna 1:
+$$ f[x_0, x_0] = ? \quad \text{\textcolor{red}{\textbf{X}}} $$
+$$ f[x_0, x_1] = \frac{f[x_1] - f[x_0]}{x_1 - x_0} \quad \text{\textcolor{green}{\checkmark}} $$
+$$ f[x_1, x_1] = ? \quad \text{\textcolor{red}{\textbf{X}}} $$
+
+In conclusione, qualunque sia il valore di $n$ considerato, abbiamo che il problema, nel calcolo delle differenze divise, si manifesta nel calcolo di $f[x_i, x_i]$, $i=0, \dots, n$.
+Queste ultime sono definite come segue:
+$$ f[x_i, x_i] = \lim_{h \to 0} f[x_i+h, x_i] = \lim_{h \to 0} \frac{f[x_i+h] - f[x_i]}{h} = \lim_{h \to 0} \frac{f(x_i+h) - f(x_i)}{h} = f'(x_i) $$
+che è un \textbf{dato del problema}.
+
+Possiamo, a questo punto, formulare un algoritmo modificato per il calcolo delle differenze divise della forma di Newton del polinomio di Hermite. Necessitiamo di 2 vettori, di lunghezza $2n+2$, che contengono i dati del problema:
+$$ f = [f_0, f'_0, f_1, f'_1, \dots, f_n, f'_n] $$
+$$ x = [x_0, x_0, x_1, x_1, \dots, x_n, x_n] $$
+
+\begin{verbatim}
+% Colonna 1
+for i = 2*n+1 : -2 : 3
+    f(i) = (f(i) - f(i-2)) / (x(i) - x(i-1));
+end
+
+for j = 2 : 2*n+1
+    for i = 2*n+2 : -1 : j+1
+        f(i) = (f(i) - f(i-1)) / (x(i) - x(i-j));
+    end
+end
+\end{verbatim}
+
+\vspace{0.4cm}
+\subsubsection*{Calcolo di un polinomio e della sua derivata prima, espresso nella base di Newton.}
+\begin{equation} \label{eq:newt_deriv}
+p(x) = \sum_{i=0}^{n} a_i w_i(x)
+\end{equation}
+$$
+\begin{cases}
+w_i(x) = w_{i-1}(x)(x - x_{i-1}) \\
+w_0(x) = 1
+\end{cases}
+$$
+
+Avevamo visto l'algoritmo di Horner generalizzato per il calcolo di \eqref{eq:newt_deriv}:
+\begin{verbatim}
+p1 = 0;                  % AGGIUNTO per calcolare p'(x)
+p = a_n;
+for i = n-1 : -1 : 0
+    p1 = p1 * (x - x_i) + p;    % AGGIUNTO per calcolare p'(x)
+    p = p * (x - x_i) + a_i;
+end
+\end{verbatim}
+Come abbiamo visto, `p` alla fine conterrà il valore di $p(x)$. Aggiungiamo (le righe commentate) nel precedente pseudocodice il calcolo di `p1` che, alla fine, conterrà il valore di $p'(x)$. In questo modo, nello stesso ciclo, si calcola sia il valore di $p(x)$ che della sua derivata prima.
+
+\vspace{0.6cm}
+\subsection*{Forma di Lagrange del polinomio interpolante di Hermite}
+Dati:
+$$ a \le x_0 < x_1 < \dots < x_n \le b $$
+$$ f_i = f(x_i), \quad f'_i = f'(x_i) \quad i=0, \dots, n $$
+Abbiamo detto che $\exists p_H(x) \in \Pi_{2n+1}$ tale che:
+$$ p_H(x_i) = f_i $$
+$$ p'_H(x_i) = f'_i, \quad i=0, \dots, n $$
+Vediamo come ottenere la forma di Lagrange. A questo fine, ricordiamo i polinomi di Lagrange di grado $n$:
+$$ L_{in}(x) = \prod_{\substack{j=0 \\ j \neq i}}^{n} \frac{x - x_j}{x_i - x_j}, \quad i=0, \dots, n $$
+Ricordiamo, inoltre, che $L_{in}(x_k) = \delta_{ik} = \begin{cases} 1, & i=k \\ 0, & i \neq k \end{cases}$
+
+Definiamo, quindi, i seguenti polinomi di grado $2n+1$:
+\begin{equation} \label{eq:lagrange_hermite}
+\begin{cases}
+\Phi_{in}(x) = L_{in}^2(x) [1 - 2(x - x_i)L'_{in}(x_i)] \\
+\Psi_{in}(x) = (x - x_i)L_{in}^2(x)
+\end{cases} \quad i=0, \dots, n
+\end{equation}
+
+\textbf{Es.} Calcolare l'espressione di $L'_{in}(x_i)$.
+
+\vspace{0.2 cm}
+\textbf{Svolgimento (GEMINI):}
+Partiamo dalla definizione del polinomio base di Lagrange:
+$$ L_{in}(x) = \prod_{\substack{j=0 \\ j \neq i}}^{n} \frac{x - x_j}{x_i - x_j} $$
+
+Possiamo riscriverlo separando la parte dipendente da $x$ (il numeratore) dalla costante (il denominatore):
+$$ L_{in}(x) = \frac{1}{C_i} \prod_{\substack{j=0 \\ j \neq i}}^{n} (x - x_j) $$
+dove $C_i = \prod_{\substack{j=0 \\ j \neq i}}^{n} (x_i - x_j)$.
+
+Calcoliamo ora la derivata prima $L'_{in}(x)$ applicando la regola di derivazione del prodotto (la derivata di un prodotto di fattori è la somma dei prodotti in cui un fattore alla volta viene derivato, e la derivata di $(x-x_j)$ è $1$):
+$$ L'_{in}(x) = \frac{1}{C_i} \sum_{\substack{k=0 \\ k \neq i}}^{n} \left( 1 \cdot \prod_{\substack{j=0 \\ j \neq i \\ j \neq k}}^{n} (x - x_j) \right) $$
+
+Valutiamo questa espressione nel punto $x = x_i$:
+$$ L'_{in}(x_i) = \frac{1}{C_i} \sum_{\substack{k=0 \\ k \neq i}}^{n} \prod_{\substack{j=0 \\ j \neq i \\ j \neq k}}^{n} (x_i - x_j) $$
+
+Osserviamo attentamente la produttoria dentro la sommatoria: essa contiene tutti i termini di $C_i$ tranne quello in cui $j=k$. Possiamo quindi riscriverla come una divisione:
+$$ \prod_{\substack{j=0 \\ j \neq i \\ j \neq k}}^{n} (x_i - x_j) = \frac{\prod_{\substack{j=0 \\ j \neq i}}^{n} (x_i - x_j)}{x_i - x_k} = \frac{C_i}{x_i - x_k} $$
+
+Sostituendo questa relazione nella formula della derivata, otteniamo:
+$$ L'_{in}(x_i) = \frac{1}{C_i} \sum_{\substack{k=0 \\ k \neq i}}^{n} \frac{C_i}{x_i - x_k} $$
+
+Semplificando la costante $C_i$ al numeratore e al denominatore, si giunge al risultato finale:
+$$ L'_{in}(x_i) = \sum_{\substack{k=0 \\ k \neq i}}^{n} \frac{1}{x_i - x_k} $$
+
+\begin{teorema}
+    Con riferimento ai polinomi in \eqref{eq:lagrange_hermite}, valgono le seguenti proprietà per ogni $j=0, \dots, n$:
+    \begin{equation} \label{eq:prop_lagrange}
+    \begin{cases}
+    \Phi_{in}(x_j) = \delta_{ij} \\
+    \Phi'_{in}(x_j) = 0
+    \end{cases}
+    \qquad \text{e} \qquad
+    \begin{cases}
+    \Psi_{in}(x_j) = 0 \\
+    \Psi'_{in}(x_j) = \delta_{ij}
+    \end{cases}
+    \end{equation}
+    \end{teorema}
+    
+    \begin{proof}
+    (GEMINI) Ricordiamo la proprietà fondamentale della base di Lagrange: $L_{in}(x_j) = \delta_{ij}$, ovvero vale $1$ se $i=j$ e $0$ se $i \neq j$.
+    
+    \textbf{1. Dimostriamo le proprietà di $\Psi_{in}(x)$:}
+    Partiamo dalla definizione:
+    $$ \Psi_{in}(x) = (x - x_i)L_{in}^2(x) $$
+    
+    Calcoliamo $\Psi_{in}(x_j)$:
+    \begin{itemize}
+        \item Se $j \neq i$: $L_{in}(x_j) = 0 \implies \Psi_{in}(x_j) = (x_j - x_i) \cdot 0^2 = 0$.
+        \item Se $j = i$: $\Psi_{in}(x_i) = (x_i - x_i)L_{in}^2(x_i) = 0 \cdot 1^2 = 0$.
+    \end{itemize}
+    Quindi $\Psi_{in}(x_j) = 0$ per ogni $j$.
+    
+    Calcoliamo ora la derivata $\Psi'_{in}(x)$ con la regola del prodotto:
+    $$ \Psi'_{in}(x) = 1 \cdot L_{in}^2(x) + (x - x_i) \cdot 2L_{in}(x)L'_{in}(x) $$
+    Valutiamola in $x_j$:
+    \begin{itemize}
+        \item Se $j \neq i$: $L_{in}(x_j) = 0$, quindi entrambi gli addendi si annullano $\implies \Psi'_{in}(x_j) = 0$.
+        \item Se $j = i$: il secondo addendo si annulla per il termine $(x_i - x_i)=0$, e rimane $\Psi'_{in}(x_i) = L_{in}^2(x_i) = 1^2 = 1$.
+    \end{itemize}
+    Quindi $\Psi'_{in}(x_j) = \delta_{ij}$.
+    
+    \vspace{0.3cm}
+    \textbf{2. Dimostriamo le proprietà di $\Phi_{in}(x)$:}
+    Partiamo dalla definizione:
+    $$ \Phi_{in}(x) = [1 - 2(x - x_i)L'_{in}(x_i)] L_{in}^2(x) $$
+    
+    Calcoliamo $\Phi_{in}(x_j)$:
+    \begin{itemize}
+        \item Se $j \neq i$: $L_{in}(x_j) = 0 \implies \Phi_{in}(x_j) = [\dots] \cdot 0^2 = 0$.
+        \item Se $j = i$: $L_{in}(x_i) = 1$, quindi $\Phi_{in}(x_i) = [1 - 2(x_i - x_i)L'_{in}(x_i)] \cdot 1^2 = [1 - 0] \cdot 1 = 1$.
+    \end{itemize}
+    Quindi $\Phi_{in}(x_j) = \delta_{ij}$.
+    
+    Infine, calcoliamo la derivata $\Phi'_{in}(x)$ applicando la regola del prodotto (notando che $-2L'_{in}(x_i)$ è una costante numerica):
+    $$ \Phi'_{in}(x) = \left[ -2L'_{in}(x_i) \right] L_{in}^2(x) + [1 - 2(x - x_i)L'_{in}(x_i)] \cdot 2L_{in}(x)L'_{in}(x) $$
+    Valutiamola in $x_j$:
+    \begin{itemize}
+        \item Se $j \neq i$: $L_{in}(x_j) = 0$, quindi tutti i termini contenenti $L_{in}$ si annullano $\implies \Phi'_{in}(x_j) = 0$.
+        \item Se $j = i$: sostituiamo $x_i$ al posto di $x$ e usiamo $L_{in}(x_i) = 1$:
+        \begin{align*}
+            \Phi'_{in}(x_i) &= -2L'_{in}(x_i) \cdot 1^2 + [1 - 2(0)L'_{in}(x_i)] \cdot 2(1)L'_{in}(x_i) \\
+            &= -2L'_{in}(x_i) + [1] \cdot 2L'_{in}(x_i) \\
+            &= -2L'_{in}(x_i) + 2L'_{in}(x_i) = 0
+        \end{align*}
+    \end{itemize}
+    Quindi $\Phi'_{in}(x_j) = 0$ per ogni $j$.
+    \end{proof}
+
+\vspace{0.4cm}
+Dalle \eqref{eq:prop_lagrange} discende che:
+\begin{equation} \label{eq:lagrange_final}
+p_H(x) = \sum_{i=0}^{n} [f_i \Phi_{in}(x) + f'_i \Psi_{in}(x)]
+\end{equation}
+Infatti, $\forall j=0, \dots, n$:
+$$ p_H(x_j) = \sum_{i=0}^{n} [f_i \underbrace{\Phi_{in}(x_j)}_{\delta_{ij}} + f'_i \underbrace{\Psi_{in}(x_j)}_{0}] = f_j $$
+e, inoltre:
+$$ p'_H(x_j) = \sum_{i=0}^{n} [f_i \underbrace{\Phi'_{in}(x_j)}_{0} + f'_i \underbrace{\Psi'_{in}(x_j)}_{\delta_{ij}}] = f'_j $$
+Pertanto, sono verificate le condizioni di interpolazione. La \eqref{eq:lagrange_final} è la forma di Lagrange del polinomio interpolante di Hermite.
