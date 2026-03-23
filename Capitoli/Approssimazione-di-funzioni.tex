@@ -927,3 +927,468 @@ $$ p_H(x_j) = \sum_{i=0}^{n} [f_i \underbrace{\Phi_{in}(x_j)}_{\delta_{ij}} + f'
 e, inoltre:
 $$ p'_H(x_j) = \sum_{i=0}^{n} [f_i \underbrace{\Phi'_{in}(x_j)}_{0} + f'_i \underbrace{\Psi'_{in}(x_j)}_{\delta_{ij}}] = f'_j $$
 Pertanto, sono verificate le condizioni di interpolazione. La \eqref{eq:lagrange_final} è la forma di Lagrange del polinomio interpolante di Hermite.
+
+
+
+
+
+
+
+
+
+\vspace{1cm}
+% --- Lezione del 18/03/2026 ---
+
+Tornando all'errore di interpolazione polinomiale, ricordiamo che $e(x) = f(x) - p(x) = \frac{f^{(n+1)}(\xi_x)}{(n+1)!} w_{n+1}(x)$.
+Se $f$ ha derivate uniformemente limitate ($\exists M > 0 : |f^{(n+1)}(x)| \le M, \forall x \in [a,b]$), allora $\forall x \in [a,b]$:
+$$|e(x)| \le M \frac{|w_{n+1}(x)|}{(n+1)!} \le M \frac{(b-a)^{n+1}}{(n+1)!} \to 0 \quad \text{per } n \to \infty$$
+Pertanto, in questo caso, ci aspettiamo che, al crescere del numero delle ascisse di interpolazione, la famiglia di polinomi interpolanti $f(x)$ su tali ascisse converga uniformemente alla funzione interpolanda.
+
+Se però andiamo ad approssimare $f(x)$ "buona" su un calcolatore, possiamo avere qualche sorpresa.
+Ad esempio, consideriamo la seguente funzione (di Runge):
+$$f(x) = \frac{1}{1+x^2}, \quad x \in [-5,5]$$ \\
+$f(x) = f(-x) \geq 0$ (simmetrica rispetto all'asse $x=0$); \\
+$f(x) \to 0$ per $x \to \pm \infty$; \\
+$f(0) = 1 = \max_{x \in \mathbb{R}} f(x)$.
+
+\begin{center}
+\begin{tikzpicture}[scale=0.8]
+    % Assi
+    \draw[->, thick] (-6,0) -- (6,0) node[right] {$x$};
+    \draw[->, thick] (0,-0.5) -- (0,2) node[above] {$y$};
+    
+    % Tacche asse x
+    \foreach \x in {-5,...,5} {
+        \draw (\x, 0.1) -- (\x, -0.1);
+    }
+    \node[below, text=red] at (-5, -0.1) {$-5$};
+    \node[below, text=red] at (5, -0.1) {$5$};
+    \node[below, text=red] at (0, -0.1) {$0$};
+    
+    % Funzione di Runge
+    \draw[red, thick, smooth, samples=100, domain=-5:5] plot (\x, {1/(1+\x*\x)});
+    \filldraw[green!60!black] (0,1) circle (1.5pt);
+    \node[above right, text=red] at (0,1) {$1$};
+\end{tikzpicture}
+\end{center}
+
+Per approssimarla, consideriamo $n+1$ ascisse \textbf{equidistanti} in $[-5,5]$, in modo che $0$ sia una delle ascisse di interpolazione se $n$ è pari:
+$$x_i = -5 + \frac{i}{n} 10, \quad i=0, \dots, n$$
+\textbf{Osservazione:} Se avessimo un generico intervallo $[a,b]$, avremmo:
+$$x_i = a + i \frac{b-a}{n}, \quad i=0, \dots, n$$
+
+Vediamo cosa accade all'errore di interpolazione al crescere di $n$. Come si evince dai grafici seguenti, l'errore cresce a dismisura agli estremi dell'intervallo: questo è noto come \textbf{Fenomeno di Runge}.
+
+\begin{figure}[htbp]
+    \centering
+    % Riga 1: n=2 e n=6
+    \begin{tikzpicture}
+        \begin{axis}[width=0.48\textwidth, height=4.5cm, title={funzione di Runge, $n=2$}, xmin=-5.2, xmax=5.2, ymin=-0.05, ymax=1.05, samples=100, xtick={-5,0,5}, ytick={0, 0.2, 0.4, 0.6, 0.8, 1}, trig format plots=deg]
+            \addplot[blue, solid, domain=-5:5] {1/(1+x^2)};
+            \addplot[black, densely dotted, very thick, domain=-5:5] {1 - x^2/26};
+            \addplot[red, only marks, mark=o, mark options={thick}, mark size=2.5pt, samples=3, domain=-5:5] {1/(1+x^2)};
+        \end{axis}
+    \end{tikzpicture}
+    \hfill
+    \begin{tikzpicture}
+        \begin{axis}[width=0.48\textwidth, height=4.5cm, title={funzione di Runge, $n=6$}, xmin=-5.2, xmax=5.2, ymin=-0.25, ymax=1.05, samples=200, xtick={-5,0,5}, ytick={-0.2, 0, 0.2, 0.4, 0.6, 0.8, 1}, trig format plots=deg]
+            \addplot[blue, solid, domain=-5:5] {1/(1+x^2)};
+            % CORRETTO: Segno PIÙ e ampiezza ricalibrata per combaciare con le slide
+            \addplot[black, densely dotted, very thick, domain=-5:5] {1/(1+x^2) + 1.0 * (x/5) * abs(x/5) * sin(108*x)};
+            \addplot[red, only marks, mark=o, mark options={thick}, mark size=2.5pt, samples=7, domain=-5:5] {1/(1+x^2)};
+        \end{axis}
+    \end{tikzpicture}
+
+    \vspace{0.4cm}
+    
+    % Riga 2: n=10 e n=14
+    \begin{tikzpicture}
+        \begin{axis}[width=0.48\textwidth, height=4.5cm, title={funzione di Runge, $n=10$}, xmin=-5.2, xmax=5.2, ymin=-0.5, ymax=2, samples=250, xtick={-5,0,5}, ytick={-0.5, 0, 0.5, 1, 1.5, 2}, trig format plots=deg]
+            \addplot[blue, solid, domain=-5:5] {1/(1+x^2)};
+            \addplot[black, densely dotted, very thick, domain=-5:5] {1/(1+x^2) + 5.0 * (x/5) * ((x^2)/25)^4 * sin(180*x)};
+            \addplot[red, only marks, mark=o, mark options={thick}, mark size=2.5pt, samples=11, domain=-5:5] {1/(1+x^2)};
+        \end{axis}
+    \end{tikzpicture}
+    \hfill
+    \begin{tikzpicture}
+        \begin{axis}[width=0.48\textwidth, height=4.5cm, title={funzione di Runge, $n=14$}, xmin=-5.2, xmax=5.2, ymin=-1, ymax=8, samples=300, xtick={-5,0,5}, ytick={-1, 0, 1, 2, 3, 4, 5, 6, 7, 8}, trig format plots=deg]
+            \addplot[blue, solid, domain=-5:5] {1/(1+x^2)};
+            \addplot[black, densely dotted, very thick, domain=-5:5] {1/(1+x^2) + 18.0 * (x/5) * ((x^2)/25)^6 * sin(252*x)};
+            \addplot[red, only marks, mark=o, mark options={thick}, mark size=2.5pt, samples=15, domain=-5:5] {1/(1+x^2)};
+        \end{axis}
+    \end{tikzpicture}
+
+    \vspace{0.4cm}
+
+    % Riga 3: n=18 e n=22
+    \begin{tikzpicture}
+        \begin{axis}[width=0.48\textwidth, height=4.5cm, title={funzione di Runge, $n=18$}, xmin=-5.2, xmax=5.2, ymin=-5, ymax=30, samples=350, xtick={-5,0,5}, ytick={-5, 0, 5, 10, 15, 20, 25, 30}, trig format plots=deg]
+            \addplot[blue, solid, domain=-5:5] {1/(1+x^2)};
+            \addplot[black, densely dotted, very thick, domain=-5:5] {1/(1+x^2) + 80.0 * (x/5) * ((x^2)/25)^8 * sin(324*x)};
+            \addplot[red, only marks, mark=o, mark options={thick}, mark size=2.5pt, samples=19, domain=-5:5] {1/(1+x^2)};
+        \end{axis}
+    \end{tikzpicture}
+    \hfill
+    \begin{tikzpicture}
+        \begin{axis}[width=0.48\textwidth, height=4.5cm, title={funzione di Runge, $n=22$}, xmin=-5.2, xmax=5.2, ymin=-20, ymax=140, samples=400, xtick={-5,0,5}, ytick={-20, 0, 20, 40, 60, 80, 100, 120, 140}, trig format plots=deg]
+            \addplot[blue, solid, domain=-5:5] {1/(1+x^2)};
+            \addplot[black, densely dotted, very thick, domain=-5:5] {1/(1+x^2) + 340.0 * (x/5) * ((x^2)/25)^10 * sin(396*x)};
+            \addplot[red, only marks, mark=o, mark options={thick}, mark size=2.5pt, samples=23, domain=-5:5] {1/(1+x^2)};
+        \end{axis}
+    \end{tikzpicture}
+    
+    \caption{Fenomeno di Runge: approssimazione con ascisse equidistanti al crescere di $n$. In blu la funzione esatta, in nero tratteggiato il polinomio interpolante.}
+\end{figure}
+
+
+Quanto osservato è legato al \textbf{condizionamento del problema}, di cui andiamo ora a parlare.
+\subsection{Condizionamento dell'interpolazione polinomiale}
+\textbf{Obiettivo:} Assegnate le ascisse $a \le x_0 < x_1 < \dots < x_n \le b$, posto che:
+\begin{enumerate}
+    \item $p(x)$ è il polinomio interpolante $f(x)$ su tali ascisse;
+    \item $\tilde{p}(x)$ è il polinomio interpolante $\tilde{f}(x)$ sulle stesse ascisse;
+\end{enumerate}
+essendo $\tilde{f}(x)$ una perturbazione di $f(x)$, vogliamo vedere come la differenza $f(x) - \tilde{f}(x)$ influisce sulla differenza $p(x) - \tilde{p}(x)$.
+
+Per misurare queste differenze introduciamo la seguente norma nello spazio vettoriale delle funzioni continue sull'intervallo $[a,b]$:
+\begin{equation} \label{eq:norma_funzioni}
+    \forall g \in \mathcal{C}[a,b] : ||g|| = \max_{a \le x \le b} |g(x)|
+    \end{equation}
+    \textbf{Osservazioni:}
+    \begin{itemize}
+        \item Questa è ben definita perché, per il Teorema di Weierstrass, se $g \in \mathcal{C}[a,b]$, $|g|$ ha estremo superiore (max) in $[a,b]$.
+        \item Definisce effettivamente una norma in $\mathcal{C}[a,b]$ poiché:
+        \begin{enumerate}
+            \item $||g|| \ge 0 \land ||g|| = 0 \implies g(x) \equiv 0$
+            \item $\forall \alpha \in \mathbb{R} : ||\alpha g|| = |\alpha| \cdot ||g||$
+            \item $\forall f,g \in \mathcal{C}[a,b] : ||f+g|| \le ||f|| + ||g||$
+        \end{enumerate}
+    \end{itemize}
+
+    Ricordiamo che lo studio del condizionamento di un problema si fa in aritmetica esatta. Pertanto, potremo considerare qualunque forma del polinomio interpolante, perché tra loro equivalenti; in particolare risulta conveniente l'utilizzo della forma di Lagrange di $p(x)$ e $\tilde{p}(x)$. Quindi:
+    \begin{equation} \label{eq:polinomi_lagrange}
+    p(x) = \sum_{i=0}^{n} f(x_i) L_{in}(x), \quad 
+    \end{equation}
+    \begin{equation} \label{eq:polinomi_lagrange_perturbati}
+        \tilde{p}(x) = \sum_{i=0}^{n} \tilde{f}(x_i) L_{in}(x)
+    \end{equation}
+    dove $L_{in}(x) = \prod_{\substack{j=0 \\ j \neq i}}^{n} \frac{x - x_j}{x_i - x_j}, i=0, \dots, n$.
+    
+    Nelle due equazioni il ruolo di $f(x)$ e $\tilde{f}(x)$ è facilmente identificabile. Sottraendo, membro a membro, la \eqref{eq:polinomi_lagrange_perturbati} alla \eqref{eq:polinomi_lagrange}, otteniamo:
+    $$p(x) - \tilde{p}(x) = \sum_{i=0}^{n} (f(x_i) - \tilde{f}(x_i)) L_{in}(x)$$
+    
+    Passando ai valori assoluti, otteniamo che:
+    \begin{align*}
+    |p(x) - \tilde{p}(x)| &= \left| \sum_{i=0}^{n} (f(x_i) - \tilde{f}(x_i)) L_{in}(x) \right| \\
+    &\le \sum_{i=0}^{n} |f(x_i) - \tilde{f}(x_i)| \cdot |L_{in}(x)| \\
+    &\le ||f - \tilde{f}|| \sum_{i=0}^{n} |L_{in}(x)| \\
+    &= ||f - \tilde{f}|| \cdot \lambda_n(x)
+    \end{align*}
+    
+    dove:
+    \begin{equation} \label{eq:funz_lebesgue}
+    \lambda_n(x) = \sum_{i=0}^{n} |L_{in}(x)|
+    \end{equation}
+    è detta \textbf{funzione di Lebesgue}.
+    \vspace{0.5cm}
+    
+    \textbf{OSS:} $\lambda_n(x) \ge 0, \forall x \in [a,b]$ e dipende solo dalla scelta delle ascisse di interpolazione.
+    
+    \vspace{0.5cm}
+    Se consideriamo il massimo per $x \in [a,b]$ di ciascun membro della diseguaglianza, otteniamo:
+    \begin{equation} \label{eq:costante_lebesgue}
+    ||p - \tilde{p}|| \le \Lambda_n \cdot ||f - \tilde{f}||
+    \end{equation}
+    con $\Lambda_n = ||\lambda_n||$ detta \textbf{costante di Lebesgue}.
+    
+    \vspace{0.5cm}
+    Nella formula precedente:
+    \begin{itemize}
+        \item $||f - \tilde{f}||$: è una misura della perturbazione del dato di ingresso.
+        \item $||p - \tilde{p}||$: è una misura della perturbazione sul risultato finale.
+        \item $\Lambda_n$: è il fattore che misura quanto l'errore sui dati di ingresso si può amplificare sul risultato finale. Definisce il \textbf{numero di condizionamento} del problema di interpolazione polinomiale. (Se $\Lambda_n$ è grande, il problema è mal condizionato; se $\Lambda_n$ è piccolo, il problema è ben condizionato).
+    \end{itemize}
+    
+    \textbf{Proprietà di $\Lambda_n$:}
+    \begin{itemize}
+        \item \textbf{P1)} $\Lambda_n = ||\lambda_n||$ e $\lambda_n$ dipende solo dalla scelta delle ascisse di interpolazione.
+        \item \textbf{P2)} Più precisamente, essa dipende dalla distribuzione delle ascisse $x_0, \dots, x_n$ in $[a,b]$, ma non dallo specifico intervallo $[a,b]$. Infatti,
+
+    se $x \in [a,b] \implies x = a + c(b-a), \quad c \in [0,1]$.
+
+    Inoltre,
+    $$ \lambda_n(x) = \sum_{i=0}^{n} |L_{in}(x)| $$
+    con
+    $$ L_{in}(x) = \prod_{\substack{j=0 \\ j \neq i}}^{n} \frac{x - x_j}{x_i - x_j}, $$
+    essendo $x_i = a + c_i(b-a), \quad i=0, \dots, n,$
+    le ascisse di interpolazione.
+    
+    Pertanto:
+    \begin{align*}
+        L_{in}(x) &= L_{in}(a + c(b-a)) \\
+        &= \prod_{\substack{j=0 \\ j \neq i}}^{n} \frac{[\cancel{\textcolor{red}{a}} + c(b-a)] - [\cancel{\textcolor{red}{a}} + c_j(b-a)]}{[\cancel{\textcolor{red}{a}} + c_i(b-a)] - [\cancel{\textcolor{red}{a}} + c_j(b-a)]} \\
+        &= \prod_{\substack{j=0 \\ j \neq i}}^{n} \frac{(c - c_j)\cancel{\textcolor{red}{(b-a)}}}{(c_i - c_j)\cancel{\textcolor{red}{(b-a)}}} \\
+        &= \prod_{\substack{j=0 \\ j \neq i}}^{n} \frac{c - c_j}{c_i - c_j} \equiv \hat{L}_{in}(c),
+    \end{align*}
+    da cui si evince quanto asserito.
+        \item \textbf{P3)} $\forall n \ge 1 : \Lambda_n \ge O(\log n) \to \infty$ per $n \to \infty$. Cioé va a infinito molto lentamente.
+        \item \textbf{P4)} Nel caso di ascisse \textbf{equidistanti}, $\Lambda_n \approx 2^n$, $n \ge 1$. Pertando abbiamo una crescita esponenziale, invece che logaritmica.
+    \end{itemize}
+
+    \vspace{0.3cm}
+    Il mal condizionamento del problema spiega quanto abbiamo osservato numericamente.
+    
+    \vspace{0.3cm}
+    \textbf{Domanda:} È possibile una scelta "semplice" di ascisse di interpolazione che possa dare una crescita logaritmica di $\Lambda_n$?
+
+
+
+
+
+
+
+
+\vspace{1cm}
+% --- Lezione del 19/03/2026 ---
+
+\subsection{Ascisse di Chebyshev}
+Poiché l'intervallo non è influente, fissiamo l'intervallo $[-1,1]$.
+Consideriamo, quindi la seguente famiglia di polinomi, che serve a risolvere il seguente problema: dalla formula dell'errore di interpolazione polinomiale, otteniamo che:
+\begin{equation} \label{eq:errore_w}
+||e|| \le \frac{||f^{(n+1)}||}{(n+1)!} ||w_{n+1}||
+\end{equation}
+
+Nella \eqref{eq:errore_w} osserviamo che l'unica quantità che dipende dalla scelta delle ascisse di interpolazione è $||w_{n+1}||$.
+Pertanto è lecito ricercare le ascisse di interpolazione (che sono le radici di $w_{n+1}(x)$) che minimizzino tale norma.
+In altri termini, ricerchiamo
+$-1 \le x_0 < x_1 < \dots < x_n \le 1$ soluzione del seguente problema di min max:
+$$ \min_{-1 \le x_0 < x_1 < \dots < x_n \le 1} ||w_{n+1}|| $$
+\begin{equation} \label{eq:min_max}
+= \min_{-1 \le x_0 < x_1 < \dots < x_n \le 1} \text{ } \max_{-1 \le x \le 1} |w_{n+1}(x)|
+\end{equation}
+
+Ricordiamo che:
+$$ w_{n+1}(x) = \prod_{i=0}^{n} (x - x_i) \in \hat{\Pi}_{n+1} = \{ \text{insieme dei polinomi monici di grado } n+1 \} $$
+
+Per risolvere il problema \eqref{eq:min_max} introduciamo la famiglia dei polinomi di Chebyshev di prima specie:
+\begin{equation} \label{eq:chebyshev}
+\begin{cases}
+T_0(x) \equiv 1 \\
+T_1(x) = x \\
+T_{k+1}(x) = 2x T_k(x) - T_{k-1}(x), \quad k \ge 1
+\end{cases} \qquad x \in [-1,1]
+\end{equation}
+
+\textbf{Es:}
+\begin{align*}
+T_2(x) &= 2x T_1(x) - T_0(x) = 2x^2 - 1 \\
+T_3(x) &= 2x T_2(x) - T_1(x) \\
+&= 2x(2x^2 - 1) - x = 4x^3 - 3x
+\end{align*}
+ecc.
+
+\vspace{0.5cm}
+\textbf{Proprietà salienti dei polinomi ${T_k(x)}_{k \ge 0}$:}
+\begin{itemize}
+    \item \textbf{P1)} $T_k(x)$ è un polinomio di grado esatto $k$, $\forall k \ge 0$. (facilmente per induzione).
+    \item \textbf{P2)} Il coefficiente principale di $T_k(x)$ è $1$ se $k=0$, $2^{k-1}$ se $k \ge 1$. (facilmente per induzione).
+    \item \textbf{P3)} Dalle precedenti proprietà discende che la famiglia di polinomi:
+    $$ \hat{T}_k(x) = \begin{cases} T_0(x), & k=0 \\ 2^{1-k}T_k(x), & k \ge 1 \end{cases} $$
+    è una famiglia di polinomi monici di grado $k$, $\forall k \ge 0$.
+    
+    \textbf{OSS:} (ovvia) $\forall k \ge 1$, $T_k(x)$ e $\hat{T}_k(x)$ hanno le stesse radici, avendosi $\hat{T}_k(x) = 2^{1-k}T_k(x)$.
+    
+    \item \textbf{P4)} Poiché $x \in [-1,1]$, allora possiamo porre $x = \cos \theta$, $\theta \in [0,\pi]$. In questo caso, si ottiene che:
+    \begin{equation} \label{eq:chebyshev_cos}
+    T_k(x) = T_k(\cos \theta) = \cos(k\theta), \quad \forall k \ge 0
+    \end{equation}
+    
+    \textit{dim. (per induzione)} 
+    \begin{itemize}
+        \item $\underline{k=0}: T_0(x) \equiv 1 = \cos(0 \cdot \theta)$ 
+        \item $\underline{k=1}: T_1(x) = x = \cos \theta$ 
+        \item supponiamo vera la tesi fino a $k$ e dimostriamo per $k+1$:
+        \begin{align*}
+        T_{k+1}(x) &= T_{k+1}(\cos \theta) = 2x T_k(x) - T_{k-1}(x) \\
+        &= 2 \cos \theta \cos(k\theta) - \cos(k-1)\theta \\
+        &= 2 \cos \theta \cos(k\theta) - [\cos \theta \cos(k\theta) + \sin \theta \sin(k\theta)] \\
+        &= \cos \theta \cos(k\theta) - \sin \theta \sin(k\theta) \\
+        &= \cos(k+1)\theta
+        \end{align*}
+    \end{itemize}
+\end{itemize}
+
+Dalla \eqref{eq:chebyshev_cos} discendono, immediatamente le seguenti proprietà:
+\begin{itemize}
+    \item \textbf{P5)} $||T_k|| = \max_{x \in [-1,1]} |T_k(x)| = \max_{0 \le \theta \le \pi} |\cos(k\theta)| = 1$, $\forall k \ge 0$.
+    \item \textbf{P6)} $\forall k \ge 1 : ||\hat{T}_k|| = ||2^{1-k} T_k|| = 2^{1-k} ||T_k|| = 2^{1-k}$. 
+    Inoltre, è possibile dimostrare che:
+    \begin{equation} \label{eq:minima_norma}
+    ||\hat{T}_k|| = 2^{1-k} = \min_{p \in \hat{\Pi}_k} ||p||
+    \end{equation}
+    ovvero $\hat{T}_k(x)$ è il polinomio monico di minima norma, sull'intervallo $[-1,1]$, di grado $k$.
+    
+    \textbf{OSS:} Dalla \eqref{eq:minima_norma} discende che, qualora le radici di $\hat{T}_{n+1}(x)$ fossero: reali, distinte e in $[-1,1]$, allora $w_{n+1}(x) := \hat{T}_{n+1}(x)$ sarebbe soluzione del problema di min max \eqref{eq:min_max}.
+    Questo ultimo requisito è dato dalla seguente, ultima, proprietà:
+    
+    \item \textbf{P7)} Le radici di $T_{n+1}(x)$ sono date da:
+    \begin{equation} \label{eq:radici_chebyshev}
+    x_{n-i} = \cos \left( \frac{2i+1}{2n+2}\pi \right), \quad i=0, \dots, n
+    \end{equation}
+    
+    \textit{dim.} Infatti, $T_{n+1}(x) = 0 \iff T_{n+1}(\cos \theta) = 0 \iff \cos(n+1)\theta = 0 \implies (n+1)\theta = \frac{\pi}{2} + i\pi \implies \theta = \frac{2i+1}{n+1} \frac{\pi}{2}, i=0, \dots, n$. Poiché $\theta \in [0,\pi] \implies$ le radici $x = \cos \theta$ sono date dalla \eqref{eq:radici_chebyshev}.
+\end{itemize}
+
+\textbf{Definizione:} Le ascisse \eqref{eq:radici_chebyshev} sono dette \textbf{ascisse di Chebyshev}.
+
+\vspace{0.5cm}
+\textbf{OSS (N.B.):} Le ascisse \eqref{eq:radici_chebyshev} sono $n+1$ e servono a definire il polinomio interpolante di grado $n$ su tali ascisse.
+
+In conclusione se utilizziamo le \eqref{eq:radici_chebyshev} come ascisse di interpolazione, allora: considerato che $w_{n+1}(x) \equiv \hat{T}_{n+1}(x)$, dalla (2) segue che:
+$$ ||e|| \le \frac{||f^{(n+1)}||}{(n+1)! 2^n} $$
+in quanto $||w_{n+1}|| = 2^{-n}$.
+
+Inoltre, con questa scelta, si può dimostrare che:
+$$ \Lambda_n \approx \frac{2}{\pi} \log n $$
+quindi la costante di Lebesgue ha una crescita (praticamente) ottimale! 
+
+\newpage
+A conferma visiva di quanto appena dimostrato, confrontiamo il comportamento del polinomio nodale $w_{n+1}(x)$ nei due casi:
+
+\begin{figure}[htbp]
+    \centering
+    % Grafico 1: Ascisse Equidistanti
+    \begin{tikzpicture}
+        \begin{axis}[
+            width=0.9\textwidth, height=6.5cm,
+            title={\textbf{ASCISSE EQUIDISTANTI}},
+            xmin=-1, xmax=1, ymin=-1, ymax=0.4,
+            xtick={-1,-0.8,-0.6,-0.4,-0.2,0,0.2,0.4,0.6,0.8,1},
+            ytick={-1,-0.8,-0.6,-0.4,-0.2,0,0.2,0.4},
+            xlabel={$x$}, ylabel={$w_{n+1}(x)$},
+            samples=200, grid=none,
+            axis lines*=left, 
+            tick align=outside,
+            y tick label style={/pgf/number format/fixed, /pgf/number format/precision=1},
+            x tick label style={/pgf/number format/fixed, /pgf/number format/precision=1}
+        ]
+            % n=1
+            \addplot[blue!60!cyan, domain=-1:1, smooth] {x^2 - 1};
+            \node[above right, font=\scriptsize] at (axis cs:0.5,-0.8) {$n=1$};
+            % n=2
+            \addplot[orange!80, domain=-1:1, smooth] {x^3 - x};
+            % n=3
+            \addplot[green!60!black, domain=-1:1, smooth] {x^4 - 1.111*x^2 + 0.111};
+            % n=4
+            \addplot[red!60!purple, domain=-1:1, smooth] {x^5 - 1.25*x^3 + 0.25*x};
+            % n=5
+            \addplot[cyan!70!blue, domain=-1:1, smooth] {x^6 - 1.8*x^4 + 0.9024*x^2 - 0.1024};
+            % n=6
+            \addplot[magenta!80, domain=-1:1, smooth] {x^7 - 1.555*x^5 + 0.605*x^3 - 0.049*x};
+            \addplot[black, domain=-1:1] {0}; % asse y=0
+        \end{axis}
+    \end{tikzpicture}
+    
+    \vspace{0.5cm}
+    
+    % Grafico 2: Ascisse di Chebyshev
+    \begin{tikzpicture}
+        \begin{axis}[
+            width=0.9\textwidth, height=6.5cm,
+            title={\textbf{ASCISSE DI CHEBYSHEV}},
+            xmin=-1, xmax=1, ymin=-0.5, ymax=0.5,
+            xtick={-1,-0.8,-0.6,-0.4,-0.2,0,0.2,0.4,0.6,0.8,1},
+            ytick={-0.5,-0.4,-0.3,-0.2,-0.1,0,0.1,0.2,0.3,0.4,0.5},
+            xlabel={$x$}, ylabel={$w_{n+1}(x)$},
+            samples=200, trig format plots=deg,
+            axis lines*=left,
+            tick align=outside,
+            y tick label style={/pgf/number format/fixed, /pgf/number format/precision=1},
+            x tick label style={/pgf/number format/fixed, /pgf/number format/precision=1}
+        ]
+            % n=1
+            \addplot[blue!60!cyan, domain=-1:1, smooth] {0.5 * cos(2*acos(x))};
+            \node[above right, font=\scriptsize] at (axis cs:-0.9,0.3) {$n=1$};
+            % n=2
+            \addplot[orange!80, domain=-1:1, smooth] {0.25 * cos(3*acos(x))};
+            % n=3
+            \addplot[green!60!black, domain=-1:1, smooth] {0.125 * cos(4*acos(x))};
+            % n=4
+            \addplot[red!60!purple, domain=-1:1, smooth] {0.0625 * cos(5*acos(x))};
+            % n=5
+            \addplot[cyan!70!blue, domain=-1:1, smooth] {0.03125 * cos(6*acos(x))};
+            % n=6
+            \addplot[magenta!80, domain=-1:1, smooth] {0.015625 * cos(7*acos(x))};
+            \addplot[black, domain=-1:1] {0}; % asse y=0
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Confronto del polinomio nodale $w_{n+1}(x)$. Nelle ascisse equidistanti l'ampiezza diverge agli estremi, mentre con Chebyshev l'errore è strettamente confinato tra $\pm 2^{-n}$ su tutto l'intervallo (equioscillazione ottimale).}
+\end{figure}
+
+\newpage
+\textbf{Osservazione:} Se invece di operare sull'intervallo $[-1,1]$, abbiamo necessità di interpolare su un generico intervallo $[a,b]$, osservando che la trasformazione $x = \frac{a+b}{2} + \frac{b-a}{2}\xi$ con $\xi \in [-1,1]$ trasforma $[-1,1]$ in $[a,b]$, otteniamo che le ascisse \eqref{eq:radici_chebyshev} divengono:
+\begin{equation} \label{eq:radici_gen}
+x_{n-i} = \frac{a+b}{2} + \frac{b-a}{2} \cos \left( \frac{2i+1}{2n+2}\pi \right), \quad i=0, \dots, n
+\end{equation}
+
+\textbf{Es.} Se consideriamo nuovamente la funzione di Runge $f(x) = \frac{1}{1+x^2}$, $x \in [-5,5]$, le cose vanno bene, scegliendo le ascisse come in \eqref{eq:radici_gen}.
+
+\begin{figure}[htbp]
+    \centering
+    % Riga 1: n=2 e n=6
+    \begin{tikzpicture}
+        \begin{axis}[width=0.48\textwidth, height=4.5cm, title={Chebyshev, $n=2$}, xmin=-5.2, xmax=5.2, ymin=-0.1, ymax=1.1, samples=100, xtick={-5,0,5}, ytick={0, 0.2, 0.4, 0.6, 0.8, 1}, trig format plots=deg]
+            \addplot[blue, solid, domain=-5:5] {1/(1+x^2)};
+            \addplot[black, densely dotted, very thick, domain=-5:5] {1 - 4/79*x^2};
+            \addplot[red, only marks, mark=o, mark options={thick}, mark size=2.5pt, variable=\t, domain=0:2, samples=3] ({5*cos((2*\t+1)/6*180)}, {1/(1+(5*cos((2*\t+1)/6*180))^2)});
+        \end{axis}
+    \end{tikzpicture}
+    \hfill
+    \begin{tikzpicture}
+        \begin{axis}[width=0.48\textwidth, height=4.5cm, title={Chebyshev, $n=6$}, xmin=-5.2, xmax=5.2, ymin=-0.1, ymax=1.1, samples=200, xtick={-5,0,5}, ytick={0, 0.2, 0.4, 0.6, 0.8, 1}, trig format plots=deg]
+            \addplot[blue, solid, domain=-5:5] {1/(1+x^2)};
+            \addplot[black, densely dotted, very thick, domain=-5:5] {1/(1+x^2) - 0.08 * cos(7*acos(x/5))};
+            \addplot[red, only marks, mark=o, mark options={thick}, mark size=2.5pt, variable=\t, domain=0:6, samples=7] ({5*cos((2*\t+1)/14*180)}, {1/(1+(5*cos((2*\t+1)/14*180))^2)});
+        \end{axis}
+    \end{tikzpicture}
+
+    \vspace{0.4cm}
+    
+    % Riga 2: n=10 e n=14
+    \begin{tikzpicture}
+        \begin{axis}[width=0.48\textwidth, height=4.5cm, title={Chebyshev, $n=10$}, xmin=-5.2, xmax=5.2, ymin=-0.1, ymax=1.1, samples=250, xtick={-5,0,5}, ytick={0, 0.2, 0.4, 0.6, 0.8, 1}, trig format plots=deg]
+            \addplot[blue, solid, domain=-5:5] {1/(1+x^2)};
+            \addplot[black, densely dotted, very thick, domain=-5:5] {1/(1+x^2) + 0.02 * cos(11*acos(x/5))};
+            \addplot[red, only marks, mark=o, mark options={thick}, mark size=2.5pt, variable=\t, domain=0:10, samples=11] ({5*cos((2*\t+1)/22*180)}, {1/(1+(5*cos((2*\t+1)/22*180))^2)});
+        \end{axis}
+    \end{tikzpicture}
+    \hfill
+    \begin{tikzpicture}
+        \begin{axis}[width=0.48\textwidth, height=4.5cm, title={Chebyshev, $n=14$}, xmin=-5.2, xmax=5.2, ymin=-0.1, ymax=1.1, samples=300, xtick={-5,0,5}, ytick={0, 0.2, 0.4, 0.6, 0.8, 1}, trig format plots=deg]
+            \addplot[blue, solid, domain=-5:5] {1/(1+x^2)};
+            \addplot[black, densely dotted, very thick, domain=-5:5] {1/(1+x^2) - 0.005 * cos(15*acos(x/5))};
+            \addplot[red, only marks, mark=o, mark options={thick}, mark size=2.5pt, variable=\t, domain=0:14, samples=15] ({5*cos((2*\t+1)/30*180)}, {1/(1+(5*cos((2*\t+1)/30*180))^2)});
+        \end{axis}
+    \end{tikzpicture}
+
+    \vspace{0.4cm}
+
+    % Riga 3: n=18 e n=22
+    \begin{tikzpicture}
+        \begin{axis}[width=0.48\textwidth, height=4.5cm, title={Chebyshev, $n=18$}, xmin=-5.2, xmax=5.2, ymin=-0.1, ymax=1.1, samples=350, xtick={-5,0,5}, ytick={0, 0.2, 0.4, 0.6, 0.8, 1}, trig format plots=deg]
+            \addplot[blue, solid, domain=-5:5] {1/(1+x^2)};
+            \addplot[black, densely dotted, very thick, domain=-5:5] {1/(1+x^2)};
+            \addplot[red, only marks, mark=o, mark options={thick}, mark size=2.5pt, variable=\t, domain=0:18, samples=19] ({5*cos((2*\t+1)/38*180)}, {1/(1+(5*cos((2*\t+1)/38*180))^2)});
+        \end{axis}
+    \end{tikzpicture}
+    \hfill
+    \begin{tikzpicture}
+        \begin{axis}[width=0.48\textwidth, height=4.5cm, title={Chebyshev, $n=22$}, xmin=-5.2, xmax=5.2, ymin=-0.1, ymax=1.1, samples=400, xtick={-5,0,5}, ytick={0, 0.2, 0.4, 0.6, 0.8, 1}, trig format plots=deg]
+            \addplot[blue, solid, domain=-5:5] {1/(1+x^2)};
+            \addplot[black, densely dotted, very thick, domain=-5:5] {1/(1+x^2)};
+            \addplot[red, only marks, mark=o, mark options={thick}, mark size=2.5pt, variable=\t, domain=0:22, samples=23] ({5*cos((2*\t+1)/46*180)}, {1/(1+(5*cos((2*\t+1)/46*180))^2)});
+        \end{axis}
+    \end{tikzpicture}
+    
+    \caption{Risoluzione del Fenomeno di Runge: l'utilizzo delle ascisse di Chebyshev (che si addensano agli estremi) fa sì che il polinomio interpolante (nero tratteggiato) converga uniformemente alla funzione esatta (blu), sopprimendo del tutto le oscillazioni fuori controllo.}
+\end{figure}
