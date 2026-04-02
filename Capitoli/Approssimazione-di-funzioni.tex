@@ -1392,3 +1392,389 @@ x_{n-i} = \frac{a+b}{2} + \frac{b-a}{2} \cos \left( \frac{2i+1}{2n+2}\pi \right)
     
     \caption{Risoluzione del Fenomeno di Runge: l'utilizzo delle ascisse di Chebyshev (che si addensano agli estremi) fa sì che il polinomio interpolante (nero tratteggiato) converga uniformemente alla funzione esatta (blu), sopprimendo del tutto le oscillazioni fuori controllo.}
 \end{figure}
+
+
+
+
+
+
+
+
+
+
+
+
+%25/03/2026
+\vspace{4cm}
+
+Se andiamo ad utilizzare la doppia precisione di MATLAB per valutare l'errore di interpolazione della funzione di Runge ($f(x) = \frac{1}{1+x^2}$, $x \in [-5,5]$), possiamo stimare l'errore calcolandolo su una griglia molto fitta (ad esempio, formata da $10^4+1$ punti) e valutare quale delle due forme del polinomio interpolante dia una migliore "performance":
+$$||e_n|| = ||f - p_n|| \approx \max_{i=0,\dots,10^4} |f(\xi_i) - p_n(\xi_i)|$$
+dove $\xi_i = -5 + \frac{i \cdot 10}{10^4} = -5 + \frac{i}{10^3}$, per $i=0, \dots, 10^4$.
+
+Graficando $||e_n||$ rispetto al grado $n$ del polinomio interpolante, si osserva che la forma di Lagrange ha un comportamento molto più stabile e un errore inferiore rispetto alla forma di Newton per gradi elevati.
+
+\begin{figure}[htbp]
+    \centering
+    % Primo Grafico (0 - 120)
+    \begin{tikzpicture}
+        \begin{axis}[
+            width=0.9\textwidth, height=7.5cm,
+            xmin=0, xmax=120,
+            ymin=-15, ymax=30,
+            xtick={0,20,40,60,80,100,120},
+            ytick={-15,-10,-5,0,5,10,15,20,25,30},
+            yticklabels={$10^{-15}$,$10^{-10}$,$10^{-5}$,$10^{0}$,$10^{5}$,$10^{10}$,$10^{15}$,$10^{20}$,$10^{25}$,$10^{30}$},
+            xlabel={$n$}, ylabel={$||e_n||$},
+            legend style={at={(0.1,0.6)},anchor=west, font=\small},
+            grid=both, grid style={dotted, gray!50},
+            axis lines*=left,
+            tick align=outside,
+            trig format plots=deg
+        ]
+            % Lagrange (scende costantemente)
+            \addplot[cyan!70!blue, mark=o, thick, domain=2:120, samples=60] {max(-x/11.5, -15)};
+            \addlegendentry{Lagrange}
+            
+            % Newton (inizialmente segue Lagrange, poi esplode con un lieve wobble, sempre crescente)
+            \addplot[orange!90!red, mark=o, thick, domain=2:120, samples=60] {max(-x/11.5, 0.38*(x-45) - 3.9 + 0.15*sin(50*x))};
+            \addlegendentry{Newton}
+        \end{axis}
+    \end{tikzpicture}
+    
+    \vspace{0.6cm}
+    
+    % Secondo Grafico (0 - 200, focus sulla zona di precisione macchina)
+    \begin{tikzpicture}
+        \begin{axis}[
+            width=0.9\textwidth, height=7.5cm,
+            xmin=0, xmax=200,
+            ymin=-16, ymax=1,
+            xtick={0,20,40,60,80,100,120,140,160,180,200},
+            ytick={-16,-14,-12,-10,-8,-6,-4,-2,0},
+            yticklabels={$10^{-16}$,$10^{-14}$,$10^{-12}$,$10^{-10}$,$10^{-8}$,$10^{-6}$,$10^{-4}$,$10^{-2}$,$10^{0}$},
+            xlabel={$n$}, ylabel={$||e_n||$},
+            legend pos=north east, legend style={font=\small},
+            grid=both, grid style={dotted, gray!50},
+            axis lines*=left,
+            tick align=outside,
+            restrict y to domain=-16:5,
+            trig format plots=deg
+        ]
+            % Lagrange (scende fino al limite di precisione di macchina ~ 10^-14.4 e lì compie piccole oscillazioni)
+            \addplot[cyan!70!blue, mark=o, thick, domain=2:200, samples=100] {max(-x/11.5, -14.4 + 0.08*cos(110*x))};
+            \addlegendentry{Lagrange}
+            
+            % Newton (esplode inesorabilmente)
+            \addplot[orange!90!red, mark=o, thick, domain=2:60, samples=30] {max(-x/11.5, 0.38*(x-45) - 3.9 + 0.15*sin(50*x))};
+            \addlegendentry{Newton}
+        \end{axis}
+    \end{tikzpicture}
+    
+    \caption{Stima dell'errore di interpolazione in doppia precisione per la funzione di Runge interpolata su nodi di Chebyshev. Mentre la forma di Lagrange decresce fino al limite della precisione di macchina ($\approx 10^{-14}$), la forma di Newton accumula instabilità numerica e i suoi errori di \textit{round-off} esplodono.}
+\end{figure}
+
+Pertanto, possiamo concludere che, se sono necessari polinomi di grado elevato per approssimare una funzione, è necessario in primis utilizzare le ascisse di crescita ottimale del problema (e.g., le ascisse di Chebyshev). In secondo luogo, si osserva che la forma di Lagrange ha una prognosi più favorevole riguardo alla propagazione degli errori di round-off, ovvero gli errori legati all'utilizzo dell'aritmetica finita.
+
+\newpage
+\textbf{OSS:} Supponendo di scegliere le ascisse di interpolazione in modo opportuno ($\iff \Lambda_n$ cresce in modo ottimale), allora l'errore è:
+\begin{align*}
+    e_n(x) &= f[x_0, \dots, x_n, x] \overbrace{w_{n+1}(x)}^{= \prod_{i=0}^{n} (x - x_i)} \\
+    &\underset{\substack{\uparrow \\ f \in \mathcal{C}^{(n+1)}([a,b])}}{=} \frac{f^{(n+1)}(\xi_x)}{(n+1)!} w_{n+1}(x)
+\end{align*}
+
+\textbf{OSS:} Se $f$ non ha una regolarità molto elevata, le sue derivate di ordine elevato non sono definite. Quindi, possiamo al più dire che:
+$$||e_n|| \le ||f[x_0, \dots, x_n, \cdot]|| \cdot ||w_{n+1}|| \le ||f[x_0, \dots, x_n, \cdot]|| \cdot (b-a)^{n+1}$$
+Se vogliamo che l'errore decresca mantenendo $n$ fissato (e preferibilmente piccolo), una possibilità è \textbf{diminuire l'ampiezza dell'intervallo $(b-a)$}. 
+Questo approccio costituisce l'idea alla base dell'interpolazione mediante funzioni spline, che adesso andiamo a definire.
+
+\vspace{0.6cm}
+\subsection{Interpolazione mediante funzioni Spline}
+
+Assegnata una partizione dell'intervallo $[a,b]$:
+\begin{equation} \label{eq:partizione}
+\Delta = \{a = x_0 < x_1 < x_2 < \dots < x_n = b\}
+\end{equation}
+
+\textbf{OSS:} 
+\begin{enumerate}
+    \item Poiché $\Delta$ è una partizione, essa individua $n$ sottointervalli $[x_{i-1}, x_i]$, $i=1, \dots, n$ a due a due contigui.
+    \item Il punto di contiguità tra due sottointervalli $[x_{i-1}, x_i]$ e $[x_i, x_{i+1}]$ è $x_i$, per $i=1, \dots, n-1$.
+\end{enumerate}
+
+\begin{center}
+\begin{tikzpicture}
+    % Asse orizzontale
+    \draw[thick, ->] (0,0) -- (10,0);
+    
+    % Tacche e label
+    \draw[thick] (1,0.1) -- (1,-0.1) node[below] {$x_0$};
+    \draw[thick] (2.5,0.1) -- (2.5,-0.1) node[below] {$x_1$};
+    \draw[thick] (4,0.1) -- (4,-0.1) node[below] {$x_2$};
+    \draw[thick] (5.5,0.1) -- (5.5,-0.1) node[below] {$x_3$};
+    \node[below] at (7, -0.1) {$\dots$};
+    \draw[thick] (8.5,0.1) -- (8.5,-0.1) node[below] {$x_n$};
+\end{tikzpicture}
+\end{center}
+
+Ciò premesso, diamo la seguente definizione.
+
+\textbf{Definizione:} Diciamo che $S_m(x)$ è una (funzione) \textbf{spline di grado $m$ definita sulla partizione $\Delta$}, se essa soddisfa le seguenti due proprietà:
+\begin{itemize}
+    \item \textbf{S1)} $S_m(x)|_{[x_{i-1}, x_i]} \in \Pi_m, \quad \forall i=1, \dots, n$. (Ovvero, in ogni sottointervallo è un polinomio di grado al più $m$).
+    \item \textbf{S2)} $S_m(x) \in \mathcal{C}^{(m-1)}[a,b]$. (Ovvero, la funzione è continua assieme alle sue prime $m-1$ derivate su tutto $[a,b]$).
+\end{itemize}
+
+\textbf{OSS:} 
+\begin{enumerate}
+    \item La condizione S2 significa che nei nodi di raccordo le derivate destra e sinistra coincidono:
+    $$\forall i=1, \dots, n-1 : \quad S_m^{(j)}|_{[x_{i-1}, x_i]}(x_i) = S_m^{(j)}|_{[x_i, x_{i+1}]}(x_i), \quad \forall j=0, \dots, m-1$$
+    \item Un polinomio di grado $m$ è una spline di grado $m$. In genere, il viceversa non vale.
+\end{enumerate}
+
+\textbf{Definizione:} Una spline di grado $m$ definita sulla partizione $\Delta$ si dirà \textbf{interpolante} una funzione $f:[a,b] \rightarrow \mathbb{R}$ se:
+\begin{equation} \label{eq:cond_spline}
+S_m(x_i) = f(x_i), \quad i=0, \dots, n
+\end{equation}
+
+Il problema che ci poniamo è di stabilire se le $n+1$ condizioni di interpolazione \eqref{eq:cond_spline} siano sufficienti ad individuare in modo unico la spline interpolante di grado $m$ cercata.
+Per rispondere a questo, introduciamo l'insieme:
+\begin{equation}
+\mathcal{S}_m(\Delta) = \{S_m(x) : \text{spline di grado } m \text{ su } \Delta \}
+\end{equation}
+
+Osserviamo che: $\forall \alpha, \beta \in \mathbb{R}$ e per ogni coppia di funzioni $S_m(x), \tilde{S}_m(x) \in \mathcal{S}_m(\Delta)$, la loro combinazione lineare appartiene ancora all'insieme, ovvero: $\alpha S_m(x) + \beta \tilde{S}_m(x) \in \mathcal{S}_m(\Delta)$.
+Pertanto, $\mathcal{S}_m(\Delta)$ è uno spazio vettoriale. A riguardo, si dimostra il seguente risultato:
+
+\begin{teorema}
+Lo spazio vettoriale $\mathcal{S}_m(\Delta)$ ha dimensione pari a $m+n$.
+\end{teorema}
+
+\textbf{Corollario:} Le $n+1$ condizioni di interpolazione \eqref{eq:cond_spline} permettono di calcolare univocamente solo la spline interpolante di grado $m=1$ (detta spline lineare). Infatti, se $m=1$, la dimensione dello spazio è $n+1$, che coincide esattamente con il numero di condizioni imposte.
+
+\textbf{OSS:} Una spline di grado 2 è detta quadratica, una di grado 3 è detta cubica, ecc.
+
+\vspace{1cm}
+\textbf{Esercizio 1:} Dimostrare che se $S_m(x)$ è una spline di grado $m > 1$ su $\Delta$, allora $S'_m(x)$ è una spline di grado $m-1$ su $\Delta$.
+
+\vspace{0.3cm}
+\textbf{OSS:}
+Da quanto argomentato nel corollario, si deduce che la spline lineare interpolante $f(x)$ è la spezzata che unisce i punti $(x_i, f_i)$ per $i=0, \dots, n$.
+
+\begin{center}
+\begin{tikzpicture}[scale=1.5]
+    % Assi
+    \draw[->, thick] (0,0) -- (4.5,0) node[right] {$x$};
+    \draw[->, thick] (0,0) -- (0,3) node[above] {$y$};
+    
+    % Punti fittizi e spezzata
+    \coordinate (P0) at (0.5, 0.5);
+    \coordinate (P1) at (1.5, 2.0);
+    \coordinate (P2) at (2.5, 1.2);
+    \coordinate (P3) at (3.5, 2.5);
+    
+    % Disegno la spezzata
+    \draw[blue, thick] (P0) -- (P1) -- (P2) -- (P3);
+    
+    % Tacche asse x e y
+    \draw[thick] (0.5,0.1) -- (0.5,-0.1) node[below] {$x_0$};
+    \draw[thick] (1.5,0.1) -- (1.5,-0.1) node[below] {$x_1$};
+    \draw[thick] (2.5,0.1) -- (2.5,-0.1) node[below] {$x_2$};
+    \draw[thick] (3.5,0.1) -- (3.5,-0.1) node[below] {$x_3$};
+    
+    \draw[dashed, gray] (1.5,0) -- (1.5,2);
+    \draw[dashed, gray] (2.5,0) -- (2.5,1.2);
+    \draw[dashed, gray] (0,2) node[left, black] {$f_1$} -- (1.5,2);
+    \draw[dashed, gray] (0,1.2) node[left, black] {$f_2$} -- (2.5,1.2);
+    
+    % Punti neri
+    \filldraw[black] (P0) circle (1.5pt) node[above left] {$(x_0, f_0)$};
+    \filldraw[black] (P1) circle (1.5pt) node[above right] {$(x_1, f_1)$};
+    \filldraw[black] (P2) circle (1.5pt) node[below right] {$(x_2, f_2)$};
+    \filldraw[black] (P3) circle (1.5pt);
+\end{tikzpicture}
+\end{center}
+
+Pertanto, otteniamo che la formula esplicita per costruirla è:
+\begin{equation}
+\forall i=1, \dots, n : \quad S_1(x) = \frac{f_i(x - x_{i-1}) + f_{i-1}(x_i - x)}{x_i - x_{i-1}}, \quad x \in [x_{i-1}, x_i]
+\end{equation}
+Questa espressione rappresenta la spline lineare interpolante, ristretta al generico sottointervallo della partizione.
+
+
+
+
+
+
+
+
+
+
+%26/03/2026
+\vspace{0.6cm}
+\subsubsection{Spline Cubiche e Condizioni al Contorno}
+
+Al fine di ottenere spline interpolanti che si raccordino in modo "smooth" nei punti di interpolazione, occorre utilizzare spline di grado più elevato. Tra queste, le più utilizzate nelle applicazioni sono le \textbf{spline cubiche ($m=3$)}.
+In questo caso, per individuare univocamente la spline cubica interpolante occorrono $3+n$ condizioni. Di queste, $n+1$ sono le condizioni di interpolazione:
+
+\begin{equation} \label{eq:cond_interp_cubica}
+    S_3(x_i) = f_i, \quad i=0, \dots, n
+\end{equation}
+
+
+Rimangono quindi da imporre \textbf{2 ulteriori condizioni}: ciascuna scelta darà origine ad una spline cubica interpolante diversa. Vediamo le scelte più comuni.
+
+\begin{itemize}
+    \item \textbf{Spline cubica naturale:} Le due ulteriori condizioni sono:
+    \begin{equation}
+        S_3''(a) = 0, \quad S_3''(b) = 0    \text{ }\text{ } (a=x_0, b=x_n)
+    \end{equation} 
+    
+    \item \textbf{Spline cubica completa:} In questo caso si suppone siano note $f'(a)$ e $f'(b)$. Le condizioni aggiuntive sono:
+    \begin{equation}
+        S_3'(a) = f'(a), \quad S_3'(b) = f'(b)
+    \end{equation} 
+    
+    \item \textbf{Spline cubica periodica:} Questa particolare funzione ha senso nel momento in cui $f(x)$ è una funzione periodica in $[a,b]$. Ad esempio, $f(x) = \sin(x)$ su $[0, 2\pi]$.
+    
+    \begin{center}
+    \begin{tikzpicture}
+        \begin{axis}[
+            width=10cm, height=4.5cm,
+            xmin=-4, xmax=14,
+            ymin=-1.5, ymax=1.5,
+            axis lines=middle,
+            xtick={-3.14, 3.14, 6.28, 9.42, 12.56},
+            xticklabels={$-\pi$, $\pi$, $2\pi$, $3\pi$, $4\pi$},
+            ytick={-1, 1},
+            enlargelimits=true,
+            clip=false,
+            grid=both, grid style={dotted, gray!30}
+        ]
+            % Evidenziazione intervallo [0, 2pi]
+            \fill[yellow!40] (0,0) rectangle (6.28, 0.15);
+            
+            % Funzione seno
+            \addplot[domain=-3.5:13, samples=100, thick, green!50!black] {sin(deg(x))};
+            
+            % Nodi rossi
+            \addplot[mark=|, mark options={red, thick}, only marks] coordinates {(-3.14,0) (0,0) (3.14,0) (6.28,0) (9.42,0) (12.56,0)};
+        \end{axis}
+    \end{tikzpicture}
+    \end{center}
+    
+    In questo caso abbiamo che le derivate agli estremi coincidono:
+    $$ \left. \frac{d^j}{dx^j} \sin(x) \right|_{x=0} = \left. \frac{d^j}{dx^j} \sin(x) \right|_{x=2\pi}, \quad \forall j=0,1,\dots $$
+    Se questo è vero per una generica funzione $f(x)$ periodica in $[a,b]$, avremo in particolare, assumendola $\mathcal{C}^{(2)}[a,b]$, che:
+    \begin{equation} \label{eq:deriv_periodiche}
+    f^{(j)}(a) = f^{(j)}(b), \quad j=0,1,2
+    \end{equation}
+    Pertanto, la condizione $S_3(a) = S_3(b)$ (essendo $f(a)=f(b)$) deriva già dalle condizioni di interpolazione \eqref{eq:cond_interp_cubica}. Le 2 condizioni aggiuntive sono pertanto derivate dalla \eqref{eq:deriv_periodiche} come:
+    \begin{equation}
+    S_3'(a) = S_3'(b), \quad S_3''(a) = S_3''(b)
+    \end{equation}
+    
+    \textbf{OSS:} Quindi una spline cubica periodica vuole essere una approssimazione qualitativamente simile alla funzione approssimata.
+    \item \textbf{Spline not-a-knot:} Questa spline, implementata nella function \texttt{spline} di Matlab, è costruita in modo tale che le condizioni di interpolazione (1) siano sufficienti ad individuarla. Le due condizioni si ottengono, implicitamente, imponendo che \textbf{lo stesso} polinomio di grado 3 rappresenti la restrizione della spline in:
+\end{itemize}
+
+
+
+\begin{equation} \label{eq:intervalli_6}
+[x_0, x_1] \quad \text{e} \quad [x_1, x_2]
+\end{equation}
+
+\begin{equation} \label{eq:intervalli_7}
+[x_{n-2}, x_{n-1}] \quad \text{e} \quad [x_{n-1}, x_n] \quad \text{(simmetricamente)}
+\end{equation}
+
+Ragioniamo per la \eqref{eq:intervalli_6} (la \eqref{eq:intervalli_7} si ottiene per simmetria). Osserviamo che, per ogni spline cubica, vale la continuità fino alla derivata seconda nel nodo $x_1$:
+\begin{equation} \label{eq:8}
+\left. S_3^{(j)} \right|_{[x_0,x_1]}(x_1) = \left. S_3^{(j)} \right|_{[x_1,x_2]}(x_1), \quad j=0,1,2
+\end{equation}
+
+Affinché i due polinomi siano identici, si dovrà imporre che, oltre alla \eqref{eq:8}, valga anche per la derivata terza ($j=3$):
+\begin{equation} \label{eq:9}
+\left. S_3^{(3)} \right|_{[x_0,x_1]}(x_1) = \left. S_3^{(3)} \right|_{[x_1,x_2]}(x_1)
+\end{equation}
+
+Essendo la derivata terza di un polinomio di grado 3 costante, la \eqref{eq:9} può essere riscritta, equivalentemente, con il rapporto incrementale delle derivate seconde:
+\begin{equation} \label{eq:10}
+\frac{S_3''(x_1) - S_3''(x_0)}{x_1 - x_0} = \frac{S_3''(x_2) - S_3''(x_1)}{x_2 - x_1}
+\end{equation}
+
+Simmetricamente, la \eqref{eq:intervalli_7} si declina come:
+\begin{equation} \label{eq:11}
+\frac{S_3''(x_{n-1}) - S_3''(x_{n-2})}{x_{n-1} - x_{n-2}} = \frac{S_3''(x_n) - S_3''(x_{n-1})}{x_n - x_{n-1}}
+\end{equation}
+
+\vspace{0.6cm}
+\subsubsection{Risoluzione del Sistema Tridiagonale}
+
+Al fine di ottenere un algoritmo efficiente per il calcolo di una spline cubica interpolante, dobbiamo esaminare un modo efficiente per risolvere un sistema lineare tridiagonale:
+\begin{equation} \label{eq:12}
+A \underline{x} = \underline{z}
+\end{equation}
+con $\underline{x} = [x_1, \dots, x_n]^T$ vettore delle incognite e $\underline{z} = [z_1, \dots, z_n]^T$ quello dei termini noti, mentre la matrice dei coefficienti $A \in \mathbb{R}^{n \times n}$ è \textbf{tridiagonale}:
+\begin{equation} \label{eq:13}
+A = \begin{bmatrix}
+a_1 & c_1 & & \\
+b_2 & a_2 & c_2 & \\
+& \ddots & \ddots & \ddots \\
+& & b_n & a_n
+\end{bmatrix}
+\end{equation}
+in cui $b_i, a_i, c_i$ sono gli elementi della sottodiagonale, diagonale principale e sopradiagonale sulla riga $i$-esima ($b_1 = c_n = 0$). Per memorizzare $A$ necessitiamo solo di 3 vettori, che contengono gli elementi delle 3 diagonali.
+
+\vspace{0.4cm}
+\textbf{OSS:} $A$ è un esempio di matrice \textbf{sparsa}, ovvero il numero di elementi $\neq 0$ è proporzionale a $n$ (dimensione di A) invece che essere una frazione di $n^2$ (numero di elementi di una genercia matrice $n \times n$) (help spy di Matlab)
+
+\vspace{0.4cm}
+Supponiamo che $A$ sia fattorizzabile $LU$ (ad es. se a diagonale dominante): $A = L U$, con:
+\[
+L = \begin{bmatrix}
+1 & & & \\
+e_2 & 1 & & \\
+& \ddots & \ddots & \\
+& & e_n & 1
+\end{bmatrix}, \quad
+U = \begin{bmatrix}
+d_1 & c_1 & & \\
+& d_2 & c_2 & \\
+& & \ddots & \ddots \\
+& & & d_n
+\end{bmatrix}
+\]
+
+Si tratta, dunque, di derivare l'espressione degli $e_i$ e dei $d_i$. Esaminiamo, per semplicità, il caso $n=3$:
+\begin{align*}
+    \underbrace{\begin{bmatrix} 1 & 0 & 0 \\ e_2 & 1 & 0 \\ 0 & e_3 & 1 \end{bmatrix}}_{L} \cdot \underbrace{\begin{bmatrix} d_1 & c_1 & 0 \\ 0 & d_2 & c_2 \\ 0 & 0 & d_3 \end{bmatrix}}_{U} &= \begin{bmatrix} d_1 & c_1 & 0 \\ e_2 d_1 & d_2 + e_2 c_1 & c_2 \\ 0 & e_3 d_2 & d_3 + e_3 c_2 \end{bmatrix} \\
+    &\equiv \underbrace{\begin{bmatrix} a_1 & c_1 & 0 \\ b_2 & a_2 & c_2 \\ 0 & b_3 & a_3 \end{bmatrix}}_{A} = A
+\end{align*}
+
+Uguagliando i termini omologhi della moltiplicazione $L \cdot U = A$, deriviamo le espressioni per gli elementi incogniti $e_i$ e $d_i$:
+\begin{equation} \label{eq:14}
+d_1 = a_1, \quad \begin{cases} e_i = b_i / d_{i-1} \\ d_i = a_i - e_i c_{i-1} \end{cases} i=2, \dots, n
+\end{equation}
+
+\textbf{OSS:} 
+\begin{enumerate}
+    \item Possiamo sovrascrivere il vettore $\underline{b}$ con $\underline{e}$ e il vettore $\underline{a}$ con $\underline{d}$. ($\underline{c}$ rimane invariato).
+    \item Il costo della fattorizzazione è di circa \textbf{$3n$ flops}.
+\end{enumerate}
+
+Risoluzione tramite i fattori $L$ e $U$:
+\begin{enumerate}
+    \item \textbf{$L\underline{y} = \underline{z}$:}
+    \begin{equation} \label{eq:15}
+    \begin{cases} y_1 = z_1 \\ y_i = z_i - e_i y_{i-1} \end{cases} i=2, \dots, n
+    \end{equation}
+    Costo: \textbf{$2n$ flops}. Possiamo sovrascrivere $\underline{z}$ con $\underline{y}$.
+    
+    \item \textbf{$U\underline{x} = \underline{y}$:}
+    \begin{equation} \label{eq:16}
+    \begin{cases} x_n = y_n / d_n \\ x_i = (y_i - c_i x_{i+1}) / d_i \end{cases} i=n-1, \dots, 1
+    \end{equation}
+    Costo: \textbf{$3n$ flops}. Possiamo sovrascrivere $\underline{y}$ con $\underline{x}$.
+\end{enumerate}
+
+\textbf{In conclusione:} per risolvere il sistema \eqref{eq:12}-\eqref{eq:13} occorrono 4 vettori di lunghezza $n$ e \textbf{$8n$ flops}. La complessità è pertanto \textbf{lineare} $\mathcal{O}(n)$.
