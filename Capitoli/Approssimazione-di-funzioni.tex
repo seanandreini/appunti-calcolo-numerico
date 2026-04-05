@@ -1778,3 +1778,138 @@ Risoluzione tramite i fattori $L$ e $U$:
 \end{enumerate}
 
 \textbf{In conclusione:} per risolvere il sistema \eqref{eq:12}-\eqref{eq:13} occorrono 4 vettori di lunghezza $n$ e \textbf{$8n$ flops}. La complessità è pertanto \textbf{lineare} $\mathcal{O}(n)$.
+
+
+
+
+
+
+
+
+
+
+
+%01/04/2026
+\vspace{1cm}
+\subsubsection{Costruzione Pratica della Spline Cubica Interpolante}
+
+Riprendiamo l'interpolazione mediante spline cubiche. Assegnata una partizione $\Delta = \{a = x_0 < x_1 < \dots < x_n = b\}$, denotiamo con:
+$$h_i = x_i - x_{i-1}, \quad i=1, \dots, n$$
+l'ampiezza dell'intervallo $i$-esimo della partizione.
+
+Nel seguito, occorrerà individuare i valori della derivata seconda della spline nei nodi della partizione. Pertanto denotiamo con:
+\begin{equation} \label{eq:mi_def}
+m_i = S_3''(x_i), \quad i=0, \dots, n
+\end{equation}
+
+Riscriviamo le condizioni aggiuntive al contorno viste precedentemente utilizzando questa nuova notazione:
+\begin{itemize}
+    \item \textbf{Spline cubica naturale:} avremo banalmente che:
+    \begin{equation}\label{eq:cond_naturale_mi}
+    m_0 = m_n = 0 
+    \end{equation}
+    
+    \item \textbf{Spline cubica not-a-knot:} avremo
+    \begin{equation*}
+    \begin{cases}
+    \frac{m_1 - m_0}{h_1} = \frac{m_2 - m_1}{h_2} \\[2ex]
+    \frac{m_{n-1} - m_{n-2}}{h_{n-1}} = \frac{m_n - m_{n-1}}{h_n}
+    \end{cases}
+    \end{equation*}
+    ovvero:
+    \begin{equation} \label{eq:cond_notaknot_mi}
+    \begin{cases}
+    m_1 (h_1+h_2) = m_2 h_1 + m_0 h_2 \\
+    m_{n-1} (h_{n-1}+h_n) = m_{n-2} h_n + m_n h_{n-1}
+    \end{cases} 
+    \end{equation}
+\end{itemize}
+
+A questo punto, ricordiamo che se $S_3(x)$ è una spline cubica su $\Delta$, allora $S_3'(x)$ è una spline quadratica su $\Delta$, e di conseguenza $S_3''(x)$ è una \textbf{spline lineare} su $\Delta$.
+Possiamo quindi esprimere $S_3''(x)$ nel generico sottointervallo $[x_{i-1}, x_i]$ usando la formula della retta passante per due punti:
+\begin{equation} \label{eq:derivata_seconda_spline}
+S_3''(x) = \frac{m_i(x - x_{i-1}) + m_{i-1}(x_i - x)}{h_i}, \quad x \in [x_{i-1}, x_i], \quad i=1, \dots, n
+\end{equation}
+Ovvero, $S_3''(x)$ è univocamente determinata una volta che i valori $m_i$ definiti in \eqref{eq:mi_def} siano noti. Vediamo come calcolarli.
+
+Integrando membro a membro la \eqref{eq:derivata_seconda_spline}, otteniamo per $x \in [x_{i-1}, x_i]$:
+\begin{equation}\label{eq:derivata_prima_spline}
+S_3'(x) = \frac{m_i(x - x_{i-1})^2 - m_{i-1}(x_i - x)^2}{2h_i} + q_i
+\end{equation}
+essendo $q_i$ una costante di integrazione.
+Se integriamo nuovamente, otteniamo l'espressione analitica della spline cubica nel sottointervallo:
+\begin{equation} \label{eq:spline_esplicita}
+S_3(x) = \frac{m_i(x - x_{i-1})^3 + m_{i-1}(x_i - x)^3}{6h_i} + q_i(x - x_{i-1}) + r_i, \quad i=1, \dots, n
+\end{equation}
+essendo, al solito, $r_i$ un'ulteriore costante di integrazione.
+
+Imponendo le condizioni di interpolazione agli estremi $x_{i-1}$ e $x_i$, dalla \eqref{eq:spline_esplicita} otteniamo:
+$$ S_3(x_{i-1}) = f_{i-1} = m_{i-1}\frac{h_i^2}{6} + r_i $$
+Da cui ricaviamo $r_i$:
+\begin{equation} \label{eq:costante_ri}
+r_i = f_{i-1} - m_{i-1}\frac{h_i^2}{6}
+\end{equation}
+Similmente per il secondo estremo:
+$$ S_3(x_i) = f_i = m_i\frac{h_i^2}{6} + q_i h_i + r_i $$
+Sostituendo $r_i$ e isolando $q_i$ otteniamo:
+\begin{align} 
+q_i &= -m_i\frac{h_i}{6} + \frac{f_i}{h_i} - \frac{f_{i-1}}{h_i} + m_{i-1}\frac{h_i}{6} \nonumber \\
+&= \frac{f(x_i) - f(x_{i-1})}{x_i - x_{i-1}} - \frac{h_i}{6}(m_i - m_{i-1}) \nonumber \\
+&= f[x_{i-1}, x_i] - \frac{h_i}{6}(m_i - m_{i-1}) \label{eq:costante_qi}
+\end{align}
+
+\textbf{OSS:}
+\begin{enumerate}
+    \item Dalle formule appena ricavate possiamo concludere che, se conoscessimo i valori $\{m_0, \dots, m_n\}$, conosceremmo la spline cubica interpolante.
+    \item Nell'intervallo $[x_{i-1}, x_i]$ della partizione si utilizza \textbf{solo informazione locale} relativa all'intervallo considerato per il calcolo di $S_3(x)$.
+\end{enumerate}
+
+Infine, per determinare gli $n+1$ valori incogniti $m_i$, imponiamo la condizione di regolarità globale $S_3(x) \in \mathcal{C}^{(2)}[a,b]$. Ovvero, verifichiamo la continuità della derivata prima nei nodi interni:
+\begin{equation} \label{eq:continuita_derivata_prima}
+\left. S_3' \right|_{[x_{i-1},x_i]}(x_i) = \left. S_3' \right|_{[x_i,x_{i+1}]}(x_i), \quad i=1, \dots, n-1
+\end{equation}
+Queste $n-1$ condizioni, unite alle \eqref{eq:cond_naturale_mi}, permetteranno di ottenere la spline cubica naturale interpolante. Similmente, se invece delle \eqref{eq:cond_naturale_mi} si considerano le \eqref{eq:cond_notaknot_mi}, otterremo la spline cubica not-a-knot interpolante.
+
+Riscriviamo le $n-1$ condizioni \eqref{eq:continuita_derivata_prima} tenendo conto della \eqref{eq:derivata_prima_spline} e della \eqref{eq:costante_qi}:
+$$ m_i\frac{h_i}{2} + q_i = -m_i\frac{h_{i+1}}{2} + q_{i+1} $$
+Sostituendo \eqref{eq:costante_qi}:
+$$ m_i\frac{h_i}{2} + f[x_{i-1}, x_i] - \frac{h_i}{6}(m_i - m_{i-1}) = -m_i\frac{h_{i+1}}{2} + f[x_i, x_{i+1}] - \frac{h_{i+1}}{6}(m_{i+1} - m_i) $$
+Riordinando i termini rispetto alle incognite $m_{i-1}, m_i, m_{i+1}$:
+$$ \frac{m_{i-1}}{6}h_i + \frac{m_i}{6}2(h_i + h_{i+1}) + \frac{m_{i+1}}{6}h_{i+1} = f[x_i, x_{i+1}] - f[x_{i-1}, x_i] $$
+Moltiplicando ambo i membri per 6 e dividendo per la somma delle ampiezze $(h_i + h_{i+1}) = x_{i+1} - x_{i-1}$, otteniamo:
+$$ m_{i-1}\left(\frac{h_i}{h_i + h_{i+1}}\right) + 2m_i + m_{i+1}\left(\frac{h_{i+1}}{h_i + h_{i+1}}\right) = 6 \frac{f[x_i, x_{i+1}] - f[x_{i-1}, x_i]}{x_{i+1} - x_{i-1}} $$
+Definendo $\phi_i = \frac{h_i}{h_i + h_{i+1}}$ e $\xi_i = \frac{h_{i+1}}{h_i + h_{i+1}}$, e riconoscendo a destra la differenza divisa del secondo ordine, la formulazione algebrica si compatta in:
+\begin{equation} \label{eq:sistema_mi}
+\phi_i m_{i-1} + 2m_i + \xi_i m_{i+1} = 6 f[x_{i-1}, x_i, x_{i+1}], \quad i=1, \dots, n-1
+\end{equation}
+
+Le \eqref{eq:sistema_mi} sono la riformulazione algebrica delle \eqref{eq:continuita_derivata_prima}, che costituiscono un sistema lineare di $n-1$ equazioni in $n+1$ incognite. Nel caso di \textbf{spline cubica naturale}, abbiamo che $m_0 = m_n = 0$, e pertanto le incognite diventano esattamente $n-1$.
+Le \eqref{eq:sistema_mi} individuano univocamente le rimanenti incognite, che possiamo scrivere elegantemente in forma vettoriale come:
+
+\begin{equation}
+\begin{bmatrix}
+2 & \xi_1 & & & \\
+\phi_2 & 2 & \xi_2 & & \\
+& \ddots & \ddots & \ddots & \\
+& & \phi_{n-2} & 2 & \xi_{n-2} \\
+& & & \phi_{n-1} & 2
+\end{bmatrix}
+\begin{bmatrix}
+m_1 \\ m_2 \\ \vdots \\ m_{n-2} \\ m_{n-1}
+\end{bmatrix}
+= 6
+\begin{bmatrix}
+f[x_0, x_1, x_2] \\ f[x_1, x_2, x_3] \\ \vdots \\ f[x_{n-3}, x_{n-2}, x_{n-1}] \\ f[x_{n-2}, x_{n-1}, x_n]
+\end{bmatrix}
+\end{equation}
+
+Abbiamo quindi ottenuto il \textbf{sistema lineare tridiagonale} di $n-1$ equazioni in $n-1$ incognite che cercavamo. 
+Inoltre, sulla generica riga $i$-esima, i coefficienti diversi da zero sono:
+\begin{itemize}
+    \item $\phi_i = \frac{h_i}{h_i+h_{i+1}} > 0$ (sottodiagonale)
+    \item $2$ (diagonale principale)
+    \item $\xi_i = \frac{h_{i+1}}{h_i+h_{i+1}} > 0$ (sopradiagonale)
+\end{itemize}
+
+Poiché banalmente $\phi_i + \xi_i = 1$, gli elementi diagonali dominano nettamente la somma degli elementi extra-diagonali ($2 > 1$). La matrice dei coefficienti è pertanto \textbf{diagonale dominante per righe}.
+Di conseguenza è \textbf{fattorizzabile LU} con complessità \textbf{lineare}, come visto in precedenza.
