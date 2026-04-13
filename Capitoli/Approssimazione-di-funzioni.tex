@@ -1913,3 +1913,382 @@ Inoltre, sulla generica riga $i$-esima, i coefficienti diversi da zero sono:
 
 Poiché banalmente $\phi_i + \xi_i = 1$, gli elementi diagonali dominano nettamente la somma degli elementi extra-diagonali ($2 > 1$). La matrice dei coefficienti è pertanto \textbf{diagonale dominante per righe}.
 Di conseguenza è \textbf{fattorizzabile LU} con complessità \textbf{lineare}, come visto in precedenza.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%09/04/2026
+\vspace{0.6cm}
+\subsection*{Sistema per la Spline Cubica Not-a-Knot}
+
+Nel caso di una spline \textbf{not-a-knot}, le equazioni \eqref{eq:sistema_mi} si completano con le due condizioni aggiuntive:
+\begin{equation} \label{eq:cond_aggiuntive_nak_h}
+\begin{cases}
+\frac{m_1 - m_0}{h_1} = \frac{m_2 - m_1}{h_2} \\[2ex]
+\frac{m_{n-1} - m_{n-2}}{h_{n-1}} = \frac{m_n - m_{n-1}}{h_n}
+\end{cases}
+\implies
+\begin{cases}
+m_1(h_1 + h_2) = m_2 h_1 + m_0 h_2 \\
+m_{n-1}(h_{n-1} + h_n) = m_{n-2} h_n + m_n h_{n-1}
+\end{cases}
+\end{equation}
+
+Ricordando la definizione dei coefficienti $\phi_i$ e $\xi_i$, possiamo riscrivere le \eqref{eq:cond_aggiuntive_nak_h} in modo compatto:
+\begin{equation} \label{eq:cond_aggiuntive_nak_compatte}
+\begin{cases}
+m_0 \xi_1 - m_1 + m_2 \phi_1 = 0 \\
+m_{n-2} \xi_{n-1} - m_{n-1} + m_n \phi_{n-1} = 0
+\end{cases}
+\end{equation}
+
+Scriviamo in forma vettoriale il sistema complessivo unendo le \eqref{eq:sistema_mi} e le \eqref{eq:cond_aggiuntive_nak_compatte}:
+\begin{equation*}
+\begin{bmatrix}
+\xi_1 & -1 & \phi_1 & & & \\
+\phi_1 & 2 & \xi_1 & & & \\
+& \phi_2 & 2 & \xi_2 & & \\
+& & \ddots & \ddots & \ddots & \\
+& & & \phi_{n-1} & 2 & \xi_{n-1} \\
+& & & \xi_{n-1} & -1 & \phi_{n-1}
+\end{bmatrix}
+\begin{bmatrix}
+m_0 \\ m_1 \\ m_2 \\ \vdots \\ m_{n-1} \\ m_n
+\end{bmatrix}
+=
+6
+\begin{bmatrix}
+0 \\ f[x_0, x_1, x_2] \\ f[x_1, x_2, x_3] \\ \vdots \\ f[x_{n-2}, x_{n-1}, x_n] \\ 0
+\end{bmatrix}
+\end{equation*}
+
+Sommando le prime 2 equazioni, e sostituendole alla prima, e sommando le ultime 2 equazioni, e sostituendole all'ultima, si ottiene:
+\begin{equation} \label{eq:sistema_nak_A}
+\begin{bmatrix}
+1 & 1 & 1 & & & \\
+\phi_1 & 2 & \xi_1 & & & \\
+& \phi_2 & 2 & \xi_2 & & \\
+& & \ddots & \ddots & \ddots & \\
+& & & \phi_{n-1} & 2 & \xi_{n-1} \\
+& & & & 1 & 1 & 1
+\end{bmatrix}
+\begin{bmatrix}
+m_0 \\ m_1 \\ m_2 \\ \vdots \\ m_{n-1} \\ m_n
+\end{bmatrix}
+= 6
+\begin{bmatrix}
+f[x_0, x_1, x_2] \\
+f[x_0, x_1, x_2] \\
+f[x_1, x_2, x_3] \\
+\vdots \\
+f[x_{n-2}, x_{n-1}, x_n] \\
+f[x_{n-2}, x_{n-1}, x_n]
+\end{bmatrix}
+\end{equation}
+sistema lineare che indichiamo con $A \underline{m} = \underline{f}$.
+
+Sottraendo la prima colonna dalla seconda e dalla terza, si ottiene:
+\begin{equation*}
+\begin{bmatrix}
+1 & 1 & 1 & & & \\
+\phi_1 & 2 & \xi_1 & & & \\
+& \phi_2 & 2 & \xi_2 & & \\
+& & \ddots & \ddots & \ddots & \\
+& & & \phi_{n-1} & 2 & \xi_{n-1} \\
+& & & & 1 & 1 & 1
+\end{bmatrix}
+\rightarrow
+\begin{bmatrix}
+1 & 0 & 0 & & & \\
+\phi_1 & (2-\phi_1) & (\xi_1-\phi_1) & & & \\
+& \phi_2 & 2 & \xi_2 & & \\
+& & \ddots & \ddots & \ddots & \\
+& & & \phi_{n-1} & 2 & \xi_{n-1} \\
+& & & & 1 & 1 & 1
+\end{bmatrix}
+\end{equation*}
+
+Similmente, se sottraiamo la ultima colonna dalla penultima e dalla terzultima, otteniamo:
+\begin{equation*}
+\begin{bmatrix}
+1 & 0 & 0 & & & \\
+\phi_1 & (2-\phi_1) & (\xi_1-\phi_1) & & & \\
+& \phi_2 & 2 & \xi_2 & & \\
+& & \ddots & \ddots & \ddots & \\
+& & & (\phi_{n-1}-\xi_{n-1}) & (2-\xi_{n-1}) & \xi_{n-1} \\
+& & & 0 & 0 & 1
+\end{bmatrix}
+\equiv B
+\end{equation*}
+
+Algebricamente, abbiamo che:
+\begin{equation*}
+B = A \cdot F \equiv A \cdot
+\begin{bmatrix}
+1 & -1 & -1 & & & \\
+& 1 & 0 & & & \\
+& & 1 & & & \\
+& & & \ddots & & \\
+& & & & 1 & \\
+& & & -1 & -1 & 1
+\end{bmatrix}
+\end{equation*}
+
+Pertanto, abbiamo che la \eqref{eq:sistema_nak_A} è equivalente a
+\begin{equation*}
+A(F \cdot F^{-1}) \underline{m} = \underline{f}
+\end{equation*}
+ovvero:
+\begin{equation*}
+B \cdot (F^{-1}\underline{m}) = \underline{f} .
+\end{equation*}
+
+Si può verificare che:
+\begin{equation*}
+F^{-1} = 
+\begin{bmatrix}
+1 & 1 & 1 & & & \\
+& 1 & 0 & & & \\
+& & 1 & & & \\
+& & & \ddots & & \\
+& & & & 1 & \\
+& & & 1 & 1 & 1
+\end{bmatrix} .
+\quad \text{Pertanto: }
+F^{-1}\underline{m} = 
+\begin{bmatrix}
+m_0 + m_1 + m_2 \\
+m_1 \\
+m_2 \\
+\vdots \\
+m_{n-1} \\
+m_{n-2} + m_{n-1} + m_n
+\end{bmatrix}
+\end{equation*}
+
+In conclusione, il sistema lineare \eqref{eq:sistema_nak_A} si può riscrivere come:
+\begin{equation*}
+\begin{bmatrix}
+1 & 0 & 0 & & & \\
+\phi_1 & (2-\phi_1) & (\xi_1-\phi_1) & & & \\
+& \phi_2 & 2 & \xi_2 & & \\
+& & \ddots & \ddots & \ddots & \\
+& & & (\phi_{n-1}-\xi_{n-1}) & (2-\xi_{n-1}) & \xi_{n-1} \\
+& & & 0 & 0 & 1
+\end{bmatrix}
+\begin{bmatrix}
+m_0 + m_1 + m_2 \\
+m_1 \\
+m_2 \\
+\vdots \\
+m_{n-1} \\
+m_{n-2} + m_{n-1} + m_n
+\end{bmatrix}
+= 6
+\begin{bmatrix}
+f[x_0, x_1, x_2] \\
+f[x_0, x_1, x_2] \\
+f[x_1, x_2, x_3] \\
+\vdots \\
+f[x_{n-2}, x_{n-1}, x_n] \\
+f[x_{n-2}, x_{n-1}, x_n]
+\end{bmatrix}
+\end{equation*}
+
+Pertanto, dalla prima equazione, si ricava che
+\begin{equation} \label{eq:ricavo_m0}
+m_0 + m_1 + m_2 = 6f[x_0, x_1, x_2] ;
+\end{equation}
+Similmente, dall'ultima equazione ricaviamo che
+\begin{equation} \label{eq:ricavo_mn}
+m_{n-2} + m_{n-1} + m_n = 6f[x_{n-2}, x_{n-1}, x_n]
+\end{equation}
+
+Le altre componenti, si ottengono risolvendo il sistema lineare tridiagonale, e a diagonale dominante per righe (dimostrarlo):
+\begin{equation*}
+\begin{bmatrix}
+(2-\phi_1) & (\xi_1-\phi_1) & & & \\
+\phi_2 & 2 & \xi_2 & & \\
+& \ddots & \ddots & \ddots & \\
+& & \phi_{n-2} & 2 & \xi_{n-2} \\
+& & & (\phi_{n-1}-\xi_{n-1}) & (2-\xi_{n-1})
+\end{bmatrix}
+\begin{bmatrix}
+m_1 \\ m_2 \\ \vdots \\ \vdots \\ m_{n-1}
+\end{bmatrix}
+= 6
+\begin{bmatrix}
+\xi_1 f[x_0, x_1, x_2] \\
+f[x_1, x_2, x_3] \\
+\vdots \\
+\vdots \\
+\phi_{n-1} f[x_{n-2}, x_{n-1}, x_n]
+\end{bmatrix}
+\end{equation*}
+
+Risolto questo, $m_0$ e $m_n$ si ottengono per differenza dalle \eqref{eq:ricavo_m0} e \eqref{eq:ricavo_mn}, rispettivamente.
+
+
+\newpage % Per mandare i grafici in una pagina pulita, come negli appunti
+
+\begin{figure}[htbp]
+    \centering
+    % Primo Grafico: Dati rumorosi vs Curva
+    \begin{tikzpicture}
+        \begin{axis}[
+            width=0.9\textwidth, height=7.5cm,
+            xmin=-1, xmax=1,
+            ymin=-1, ymax=1,
+            axis lines=box,
+            grid=none,
+            xlabel={$x$}, ylabel={$y$},
+            xtick={-1, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1},
+            ytick={-1, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1},
+            tick align=inside,
+            enlargelimits=false
+        ]
+            % Dati rumorosi (scatter)
+            \addplot[
+                only marks, mark=*, mark size=0.6pt, blue!80!black,
+                samples=400, domain=-1:1
+            ] {0.7*x^3 - 0.2*x + 0.15*rand};
+            
+            % Polinomio originario (curva liscia)
+            \addplot[
+                thick, orange!80!red,
+                samples=100, domain=-1:1
+            ] {0.7*x^3 - 0.2*x};
+        \end{axis}
+    \end{tikzpicture}
+    
+    \vspace{0.8cm}
+    
+    % Secondo Grafico: Evidenziazione dei residui/rumore
+    \begin{tikzpicture}
+        \begin{axis}[
+            width=0.9\textwidth, height=7.5cm,
+            xmin=-1, xmax=1,
+            ymin=-1, ymax=1,
+            axis lines=box,
+            grid=none,
+            xlabel={$x$}, ylabel={$y$},
+            xtick={-1, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1},
+            ytick={-1, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1},
+            tick align=inside,
+            enlargelimits=false
+        ]
+            % Simulazione delle linee di residuo rosse tra i punti rumorosi
+            \addplot[
+                mark=*, mark size=0.6pt, blue!80!black,
+                draw=red!50!white, thin, % Linee rosse che simulano gli errori verticali
+                samples=400, domain=-1:1
+            ] {0.7*x^3 - 0.2*x + 0.15*rand};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{In alto: dispersione di dati affetti da rumore casuale rispetto al modello polinomiale sottostante. In basso: evidenziazione grafica dei residui, che giustifica la necessità di un'approssimazione ai minimi quadrati rispetto a una pura interpolazione nodale.}
+\end{figure}
+
+\vspace{1cm}
+\subsection{Approssimazione Polinomiale nel Senso dei Minimi Quadrati}
+
+Il problema è il seguente: supponiamo di avere $n+1$ coppie di dati $(x_i, y_i)$, per $i=0, \dots, n$, che sono misurazioni (rumorose) di un fenomeno descritto da un polinomio $p(x) \in \Pi_m$ con $m \ll n$. 
+Il problema richiede di calcolare il polinomio $p(x)$ che \textit{meglio approssima} i dati assegnati.
+
+Un modo per definire $p(x)$ è quello di richiedere che $p$ minimizzi la somma dei quadrati delle differenze tra i dati:
+\begin{equation} \label{eq:residuo_quadratico}
+r^2 := \sum_{i=0}^{n} (y_i - p(x_i))^2
+\end{equation}
+ovvero la somma dei quadrati delle differenze tra il dato osservato $y_i$ e quello predetto dal modello polinomiale $p(x_i)$ in $x_i$. Per questo motivo, si parla di polinomio di \textbf{approssimazione ai minimi quadrati}.
+
+\textbf{OSS:} Il grado $m$ del polinomio è dettato dalla derivazione fisica del problema. Nel seguito, assumeremo che almeno $m+1$ delle ascisse $\{x_i\}$ siano tra loro distinte. Sotto queste ipotesi è possibile dimostrare il seguente risultato.
+
+\paragraph{Teorema:} Se almeno $m+1$ delle ascisse $\{x_i\}$ sono tra loro distinte, il polinomio di approssimazione di grado $m$ ai minimi quadrati esiste ed è \textbf{unico}.
+
+\begin{proof}
+Se $p(x) \in \Pi_m \implies p(x) = \sum_{j=0}^{m} a_j x^j$ per coefficienti $a_j$ (al momento incogniti) opportuni. A questo punto, osserviamo che:
+\begin{align*}
+    r^2 &= \left\| 
+    \begin{bmatrix}
+    x_0^0 & x_0^1 & \dots & x_0^m \\
+    \vdots & \vdots & & \vdots \\
+    x_n^0 & x_n^1 & \dots & x_n^m
+    \end{bmatrix}
+    \begin{bmatrix}
+    a_0 \\ a_1 \\ \vdots \\ a_m
+    \end{bmatrix}
+    -
+    \begin{bmatrix}
+    y_0 \\ y_1 \\ \vdots \\ y_n
+    \end{bmatrix}
+    \right\|_2^2 \\[2ex]
+    &\equiv || V\underline{a} - \underline{y} ||_2^2 ,
+    \end{align*}
+con $V \in \mathbb{R}^{(n+1) \times (m+1)}$ matrice di tipo Vandermonde, $\underline{a} \in \mathbb{R}^{m+1}$ vettore con i coefficienti incogniti, e $\underline{y} \in \mathbb{R}^{n+1}$ vettore con le osservazioni nei vari punti.
+
+Pertanto, minimizzare $r^2$ equivale a risolvere \textbf{nel senso dei minimi quadrati} il sistema lineare sovradeterminato:
+\begin{equation} \label{eq:sistema_sovradeterminato}
+V\underline{a} = \underline{y}
+\end{equation}
+A questo punto la tesi segue osservando che, avendosi almeno $m+1$ ascisse $\{x_i\}$ distinte, le corrispondenti righe di $V$ costituiscono una matrice di Vandermonde quadrata di ordine $m+1$ non singolare. Pertanto, $V$ ha rango massimo e possiamo risolvere la \eqref{eq:sistema_sovradeterminato} mediante la fattorizzazione $QR$ di $V$.
+\end{proof}
+
+\textbf{OSS:} La function \texttt{polyfit} di Matlab calcola esattamente i coefficienti del polinomio di approssimazione ai minimi quadrati (\texttt{help polyfit}).
+Per il problema proposto inizialmente (es. $n=1000$, $m=3$), si ottiene un grafico simile a quello sottostante (in rosso il polinomio originario, in nero tratteggiato il polinomio ai minimi quadrati calcolato sui dati rumorosi).
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            width=0.9\textwidth, height=8cm,
+            xmin=-1, xmax=1,
+            ymin=-1, ymax=1,
+            axis lines=box,
+            grid=both, grid style={dotted, gray!40},
+            xlabel={$x$}, ylabel={$y$},
+            xtick={-1, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1},
+            ytick={-1, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1},
+            tick align=inside,
+            enlargelimits=false
+        ]
+            % Dati rumorosi (scatter)
+            \addplot[
+                only marks,
+                mark=*,
+                mark size=0.8pt,
+                draw=blue!70!black,
+                fill=blue!70!black,
+                samples=500,
+                domain=-1:1
+            ] {0.8*x^3 - 0.2*x + 0.18*rand};
+            
+            % Polinomio originario (curva liscia rossa)
+            \addplot[
+                thick,
+                red!80!black,
+                samples=100,
+                domain=-1:1
+            ] {0.8*x^3 - 0.2*x};
+            
+            % Polinomio approssimato (curva nera tratteggiata quasi sovrapposta)
+            \addplot[
+                thick,
+                black,
+                densely dashed,
+                samples=100,
+                domain=-1:1
+            ] {0.78*x^3 - 0.19*x + 0.015};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Approssimazione polinomiale ai minimi quadrati ($m=3$) per dati affetti da rumore casuale.}
+\end{figure}
