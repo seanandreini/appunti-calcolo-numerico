@@ -191,3 +191,214 @@ Da quanto esposto, si conclude che le formule di Newton-Cotes sono da utilizzare
     \end{tikzpicture}
     \caption{Andamento del rapporto $K_n/K$ al variare di $n$. L'instabilità numerica esplode per $n \ge 10$ con il tipico andamento a zig-zag.}
 \end{figure}
+
+
+
+
+
+
+
+
+
+
+
+
+%16/04/2026
+\vspace{0.6cm}
+\subsubsection*{Calcolo pratico dei pesi di Newton-Cotes}
+
+\textbf{OSS:} I coefficienti $c_{in}$ definiti nella formula di Newton-Cotes sono numeri \textbf{razionali}. Infatti:
+\begin{equation}
+c_{in} = \frac{\alpha_{in}}{d_{in}}
+\end{equation}
+con:
+\begin{equation*}
+d_{in} = \prod_{\substack{j=0 \\ j \neq i}}^{n} (i-j) \quad \text{e} \quad \alpha_{in} = \int_{0}^{n} \prod_{\substack{j=0 \\ j \neq i}}^{n} (t-j) dt
+\end{equation*}
+
+Possiamo calcolare in Matlab $\alpha_{in}$ e $d_{in}$ facilmente. Per il generico indice $i$, si calcola:
+\begin{verbatim}
+    ind = [0:i-1, i+1:n];
+    din = prod(i - ind);
+    a = poly(ind); % coeff. del polinomio monico con le radici
+                   % in argomento, per potenze decrescenti.
+    \end{verbatim}
+    
+    Essendo il vettore dei coefficienti:
+    \begin{equation*}
+    a = [a(1) \quad a(2) \quad \dots \quad a(n+1)]
+    \end{equation*}
+    ovvero $q(t) = \sum_{i=1}^{n+1} a(i) t^{n+1-i}$, allora il suo integrale è:
+    \begin{equation*}
+    \int q(t) dt = \sum_{i=1}^{n+1} a(i) \frac{t^{n+2-i}}{n+2-i}
+    \end{equation*}
+    che è un polinomio omogeneo di grado $n+1$. Completiamo quindi lo script definendo l'array \texttt{q} con i coefficienti della primitiva:
+    \begin{verbatim}
+    q = [a ./ (n+1:-1:1), 0];
+    alfain = polyval(q, n);
+    cin = alfain / din;
+    format rat
+    \end{verbatim}
+
+\vspace{0.6cm}
+% --- INIZIO SEZIONE 5.2 DELL'INDICE ---
+\subsection{Errore e formule composite}
+
+In questo caso, poiché in generale $I(f) \neq I_n(f)$, vogliamo ottenere un'espressione per l'errore di quadratura:
+\begin{equation} \label{eq:errore_quadratura_def}
+    \begin{split}
+    E_n(f) &= I(f) - I_n(f) = \int_{a}^{b} f(x) dx - \int_{a}^{b} p(x) dx = \int_{a}^{b} (f(x) - p(x)) dx \\[2ex]
+    &= \int_{a}^{b} f[x_0, x_1, \dots, x_n, x] \overbrace{\omega_{n+1}(x)}^{= \prod_{i=0}^{n} (x-x_i)} dx
+    \end{split}
+\end{equation}
+dove $p(x)$ è il polinomio interpolante. 
+Se assumiamo che $f \in \mathcal{C}^{(n+\mu)}[a,b]$, senza addentrarci nella dimostrazione, si ottiene:
+\begin{equation} \label{eq:errore_quadratura_teo}
+E_n(f) = \nu_n f^{(n+\mu)}(\xi) \left( \frac{b-a}{n} \right)^{n+\mu+1}
+\end{equation}
+dove $\nu_n$ è un coefficiente che dipende solo da $n$, $\xi \in (a,b)$, e:
+\begin{equation}
+\mu = 
+\begin{cases} 
+1 & \text{se } n \text{ è dispari} \\ 
+2 & \text{se } n \text{ è pari} 
+\end{cases}
+\end{equation}
+\textbf{OSS:} Dalla \eqref{eq:errore_quadratura_teo} otteniamo che per far tendere $E_n(f) \to 0$ dovremmo far tendere $n \to \infty$. D'altronde, questo è precluso dal fatto che, per il problema del condizionamento visto in precedenza, richiedevamo $n \in $ \{1,...,7,9\}. Pertanto, abbiamo requisiti contrastanti.
+
+Per ovviare a questo problema, utilizziamo le formule di Newton-Cotes come \textbf{formule composite}.
+
+\vspace{0.6cm}
+\subsubsection*{Formule di Quadratura Composite}
+
+Per illustrare questa idea, utilizziamo la formula dei trapezi.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}
+        % Assi
+        \draw[thick, ->] (-0.5, 0) -- (8.5, 0) node[right] {$x$};
+        \draw[thick, ->] (0, -0.5) -- (0, 4) node[above] {$y$};
+        
+        % Curve f(x) (verde)
+        \draw[thick, green!50!black] (1, 1.2) .. controls (2.5, 3.5) and (4.5, 2.5) .. (7.5, 3.8);
+        
+        % Nodi verticali (arancioni) e punti rossi
+        \foreach \x/\y in {1/1.2, 2/2.55, 3/2.8, 4/2.6, 6.5/2.95, 7.5/3.8} {
+            \draw[orange, thick] (\x, 0) -- (\x, \y);
+            \fill[red] (\x, \y) circle (1.5pt);
+            \fill[red] (\x, 0) circle (1.5pt);
+        }
+        
+        % Etichette asse x
+        \node[below, text=red!80!black] at (1,0) {$x_0=a$};
+        \node[below, text=red!80!black] at (2,0) {$x_1$};
+        \node[below, text=red!80!black] at (3,0) {$x_2$};
+        \node[below, text=red!80!black] at (4,0) {$x_3$};
+        \node[below, text=red!80!black] at (5.25,0) {$\dots$};
+        \node[below, text=red!80!black] at (6.5,0) {$x_{n-1}$};
+        \node[below, text=red!80!black] at (7.5,0) {$x_n=b$};
+        
+        % Trapezi (Linee rosse di congiunzione)
+        \draw[thick, red] (1, 1.2) -- (2, 2.55) -- (3, 2.8) -- (4, 2.6);
+        \draw[thick, red] (6.5, 2.95) -- (7.5, 3.8);
+        
+        % Testi e frecce descrittive
+        \node[right, green!50!black] at (8, 2.8) {$f(x)$};
+        \draw[->, green!50!black] (8, 2.8) .. controls (7.5, 2.8) .. (7.2, 3.2);
+        
+        \node[above right, red] at (4.5, 4) {formula composita dei trapezi};
+        \draw[->, red] (6, 4.1) .. controls (5, 4.1) and (4, 3) .. (2.5, 2.6);
+        \draw[->, red] (7.5, 4.1) .. controls (7.2, 3.9) .. (7, 3.5);
+        
+    \end{tikzpicture}
+    \caption{Interpretazione geometrica della formula composita dei trapezi.}
+\end{figure}
+
+L'idea in definitiva è la seguente:
+\begin{equation} \label{eq:integrale_spezzato}
+I(f) = \int_{a}^{b} f(x) dx = \sum_{i=1}^{n} \int_{x_{i-1}}^{x_i} f(x) dx
+\end{equation}
+Approssimando ogni singolo integrale con la formula dei trapezi, otteniamo:
+\begin{equation} \label{eq:composita_trapezi}
+ \approx \sum_{i=1}^{n} \frac{b-a}{n} \left( \frac{f_{i-1} + f_i}{2} \right) = \frac{b-a}{n} \sum_{i=1}^{n} \frac{f_{i-1} + f_i}{2} \equiv I_1^{(n)}(f) \text{ (formula composita dei trapezi) }
+\end{equation}
+
+Esaminiamo l'errore:
+\begin{align*}
+E_1^{(n)}(f) &= I(f) - I_1^{(n)}(f) \\
+&= \sum_{i=1}^{n} \int_{x_{i-1}}^{x_i} f(x) dx - \frac{b-a}{n} \frac{(f_{i-1} + f_i)}{2} \\
+&= \sum_{i=1}^{n} \nu_1 f^{(2)}(\xi_i) \left( \frac{b-a}{n} \right)^3 \quad \text{con } \xi_i \in [x_{i-1}, x_i] \\
+&= \nu_1 \left( \frac{b-a}{n} \right)^3 \sum_{i=1}^{n} f^{(2)}(\xi_i)
+\end{align*}
+Per il teorema della media, la sommatoria è pari a $n \cdot f^{(2)}(\xi)$ con $\xi \in (a,b)$. Quindi:
+\begin{equation} \label{eq:errore_composita_trapezi_finale}
+E_1^{(n)}(f) = \nu_1 \left( \frac{b-a}{n} \right)^3 n \cdot f^{(2)}(\xi) = \nu_1 (b-a) f^{(2)}(\xi) \left( \frac{b-a}{n} \right)^2 \xrightarrow{n \to \infty} 0
+\end{equation}
+
+In generale, se la formula ha grado k ($k \in$ \{ 1,...,7,9\}) e $n$ è un multiplo di $k$ ($n = k \cdot l$), otteniamo che la formula composita di grado $k$ sugli $n+1$ punti $x_i = a+ih$, con $i=0,\dots, n$, $h=\frac{b-a}{n}$, si ottiene applicandola $l$ volte per ricoprire l'intervallo $[a,b]$:
+\begin{equation*}
+[x_0, x_k] \cup [x_{k+1}, x_{2k}] \cup \dots \cup [x_{k(l-1)}, x_{kl}] = [a,b]
+\end{equation*}
+In questo modo, il corrispondente errore si vede essere:
+\begin{equation} \label{eq:errore_composita_generale}
+\begin{split}
+E_k^{(n)}(f) &= I(f) - I_k^{(n)}(f) \\[1ex]
+&= \nu_k f^{(k+\mu)}(\xi) \cdot l \cdot h^{k+\mu+1}, \quad \xi \in [a,b] \\[1ex]
+&= \nu_k f^{(k+\mu)}(\xi) \cdot l \left( \frac{b-a}{n} \right)^{k+\mu+1}, \quad n = kl \\[1ex]
+&= \nu_k \frac{(b-a)}{k} f^{(k+\mu)}(\xi) \left( \frac{b-a}{n} \right)^{k+\mu} \xrightarrow{n \to \infty} 0
+\end{split}
+\end{equation}
+
+\vspace{0.6cm}
+\subsubsection*{Esempi di Formule Composite}
+
+\paragraph{$k=1$ (Formula composita dei Trapezi):}
+\begin{align} \label{eq:trapezi_esplicita}
+I_1^{(n)}(f) &= \frac{b-a}{n} \left( \frac{f_0}{2} + \frac{f_1}{2} + \frac{f_1}{2} + \frac{f_2}{2} + \dots + \frac{f_{n-1}}{2} + \frac{f_n}{2} \right) \nonumber \\
+&= \frac{b-a}{n} \left( \frac{f_0}{2} + \sum_{i=1}^{n-1} f_i + \frac{f_n}{2} \right)
+\end{align}
+\textbf{OSS:} Se $f$ è periodica in $[a,b] \implies f_0 = f_n$, da cui $I_1^{(n)}(f) = \frac{b-a}{n} \sum f_i$ (N.B. essenziale nella elaborazione numerica dei segnali).
+
+\paragraph{$k=2$ (Formula composita di Simpson):}
+In questo caso $n$ deve essere pari ($n = 2l$). Si ottiene:
+\begin{align} \label{eq:simpson_esplicita}
+I_2^{(n)}(f) &= \frac{b-a}{n} \left[ \frac{f_0 + 4f_1 + f_2}{3} + \frac{f_2 + 4f_3 + f_4}{3} + \dots + \frac{f_{n-2} + 4f_{n-1} + f_n}{3} \right] \nonumber \\
+&= \frac{b-a}{3n} \left[ 4\sum_{i=1}^{n/2} f_{2i-1} + 2\sum_{i=0}^{n/2} f_{2i} - f_0 - f_n \right]
+\end{align}
+
+\vspace{0.6cm}
+\textbf{N.B.} In ogni caso, tutti i valori di $f$ necessari possono essere precalcolati (possibilmente in modo vettoriale) come segue:
+\begin{verbatim}
+x = linspace(a, b, n+1); % punti xi
+f = fun(x);
+\end{verbatim}
+Sia \texttt{fun} la function che implementa la funzione integranda. Il comando restituisce pertanto tutti i valori della funzione integranda richiesti per implementare la formula composita in esame. Bisogna \textbf{evitare valutazioni funzionali ridondanti}.
+
+\vspace{0.6cm}
+\paragraph{Esempio Numerico:}
+Consideriamo l'approssimazione di questo integrale:
+\begin{equation}
+I(f) = \int_{0}^{\pi} \sin(x) dx = 2
+\end{equation}
+
+\begin{table}[htbp]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{ccccc}
+\toprule
+$n$ & $I_1^{(n)}$ & $E_1^{(n)}$ & $I_2^{(n)}$ & $E_2^{(n)}$ \\
+\midrule
+2  & 1.5708 & $4.2920 \cdot 10^{-1}$ & 2.0944 & $-9.4395 \cdot 10^{-2}$ \\
+4  & 1.8961 & $1.0388 \cdot 10^{-1}$ & 2.0046 & $-4.5598 \cdot 10^{-3}$ \\
+6  & 1.9541 & $4.5903 \cdot 10^{-2}$ & 2.0009 & $-8.6319 \cdot 10^{-4}$ \\
+8  & 1.9742 & $2.5768 \cdot 10^{-2}$ & 2.0003 & $-2.6917 \cdot 10^{-4}$ \\
+10 & 1.9835 & $1.6476 \cdot 10^{-2}$ & 2.0001 & $-1.0952 \cdot 10^{-4}$ \\
+12 & 1.9886 & $1.1436 \cdot 10^{-2}$ & 2.0001 & $-5.2624 \cdot 10^{-5}$ \\
+14 & 1.9916 & $8.3996 \cdot 10^{-3}$ & 2.0000 & $-2.8344 \cdot 10^{-5}$ \\
+16 & 1.9936 & $6.4297 \cdot 10^{-3}$ & 2.0000 & $-1.6591 \cdot 10^{-5}$ \\
+18 & 1.9949 & $5.0795 \cdot 10^{-3}$ & 2.0000 & $-1.0348 \cdot 10^{-5}$ \\
+20 & 1.9959 & $4.1140 \cdot 10^{-3}$ & 2.0000 & $-6.7844 \cdot 10^{-6}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
