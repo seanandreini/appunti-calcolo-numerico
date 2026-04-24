@@ -402,3 +402,205 @@ $n$ & $I_1^{(n)}$ & $E_1^{(n)}$ & $I_2^{(n)}$ & $E_2^{(n)}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+
+
+
+
+
+
+
+
+
+
+
+
+%22/04/2026
+\vspace{0.6cm}
+\subsubsection*{Stima dell'errore di quadratura}
+
+Vediamo se dalla formula dell'errore si possa ottenere, a costo nullo, una stima dell'errore di quadratura.
+
+\textbf{OSS:} il costo computazionale verrà misurato in termini di valutazioni funzionali della funzione integranda, che, pertanto, non devono essere ridondanti.
+
+Supponiamo che, nella formula composita, $n$ sia un multiplo pari di $k$, ovvero $n = 2kl$. Allora possiamo applicare la formula composita sia su tutti gli $n+1$ punti, che solo su quelli di indice pari.
+
+\begin{center}
+\begin{tikzpicture}
+    % Linea base
+    \draw[thick, ->] (0,0) -- (9,0);
+    
+    % Nodi
+    \foreach \x/\i in {0/0, 1/1, 2/2, 3/3, 4/4, 5/5, 6/6, 7/7, 8/8} {
+        \draw[thick] (\x, 0.1) -- (\x, -0.1) node[below] {$x_{\i}$};
+    }
+    
+    % Archi per Simpson (k=2)
+    \node[above, text=blue!80!black] at (1, 0.5) {Simpson su tutti i punti};
+    \draw[->, thick, blue!80!black] (0, 0.2) to[bend left=30] (2, 0.2);
+    \draw[->, thick, blue!80!black] (2, 0.2) to[bend left=30] (4, 0.2);
+    \draw[->, thick, blue!80!black] (4, 0.2) to[bend left=30] (6, 0.2);
+    \draw[->, thick, blue!80!black] (6, 0.2) to[bend left=30] (8, 0.2);
+    
+    % Archi per Simpson sui punti pari
+    \node[above, text=red!80!black] at (4, -1.2) {Simpson solo sui punti pari ($n/2$)};
+    \draw[->, thick, red!80!black] (0, -0.6) to[bend right=25] (4, -0.6);
+    \draw[->, thick, red!80!black] (4, -0.6) to[bend right=25] (8, -0.6);
+\end{tikzpicture}
+\end{center}
+
+Così facendo, dalla formula generale dell'errore otteniamo che per un opportuno $\hat{\xi} \in [a,b]$ (generalmente $\hat{\xi} \neq \xi$) e ponendo $n/2$ al posto di $n$ (poiché l'intervallo è doppio, il passo è $2h$):
+\begin{equation} \label{eq:errore_n_mezzi}
+I(f) - I_k^{(n/2)}(f) = \nu_k \left(\frac{b-a}{k}\right) f^{(k+\mu)}(\hat{\xi}) \left(\frac{b-a}{n/2}\right)^{k+\mu}
+\end{equation}
+Ricordiamo inoltre la formula per $n$ intervalli:
+\begin{equation} \label{eq:errore_n_intero}
+I(f) - I_k^{(n)}(f) = \nu_k \left(\frac{b-a}{k}\right) f^{(k+\mu)}(\xi) \left(\frac{b-a}{n}\right)^{k+\mu}
+\end{equation}
+
+Facendo l'assunzione che $\hat{\xi} \approx \xi$ e sottraendo la \eqref{eq:errore_n_intero} dalla \eqref{eq:errore_n_mezzi} membro a membro, otteniamo:
+\begin{equation*}
+I_k^{(n)}(f) - I_k^{(n/2)}(f) \approx \nu_k \left(\frac{b-a}{k}\right) f^{(k+\mu)}(\xi) \left(\frac{b-a}{n}\right)^{k+\mu} (2^{k+\mu} - 1)
+\end{equation*}
+
+Pertanto, dividendo membro a membro per $2^{k+\mu} - 1$, otteniamo l'espressione per la stima dell'errore:
+\begin{equation} \label{eq:stima_errore_quad}
+\hat{E}_k^{(n)}(f) = \frac{I_k^{(n)}(f) - I_k^{(n/2)}(f)}{2^{k+\mu} - 1} \approx \nu_k \left(\frac{b-a}{k}\right) f^{(k+\mu)}(\xi) \left(\frac{b-a}{n}\right)^{k+\mu} = I(f) - I_k^{(n)}(f) = E_k^{(n)}(f)
+\end{equation}
+
+Così facendo, otteniamo una stima computazionale dell'errore di quadratura. Chiaramente, questa stima diviene più accurata al crescere di $n$.
+
+Ad esempio, se consideriamo l'integrale $I(f) = \int_{0}^{\pi} \sin(x) dx = 2$ ed utilizziamo le formule composite dei trapezi e di Simpson ($k=1$ e $k=2$, rispettivamente), si ottiene la seguente tabella comparativa tra l'errore reale $E$ e la stima $\hat{E}$:
+
+\begin{table}[htbp]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{ccccccc}
+\toprule
+$n$ & $I_1^{(n)}$ & $E_1^{(n)}$ & $\hat{E}_1^{(n)}$ & $I_2^{(n)}$ & $E_2^{(n)}$ & $\hat{E}_2^{(n)}$ \\
+\midrule
+2 & 1.5708 & $4.2920 \cdot 10^{-1}$ & $5.2360 \cdot 10^{-1}$ & 2.0944 & $-9.4395 \cdot 10^{-2}$ & - \\
+4 & 1.8961 & $1.0388 \cdot 10^{-1}$ & $1.0844 \cdot 10^{-1}$ & 2.0046 & $-4.5598 \cdot 10^{-3}$ & $-5.9890 \cdot 10^{-3}$ \\
+6 & 1.9541 & $4.5903 \cdot 10^{-2}$ & $4.6766 \cdot 10^{-2}$ & 2.0009 & $-8.6319 \cdot 10^{-4}$ & - \\
+8 & 1.9742 & $2.5768 \cdot 10^{-2}$ & $2.6038 \cdot 10^{-2}$ & 2.0003 & $-2.6917 \cdot 10^{-4}$ & $-2.8604 \cdot 10^{-4}$ \\
+10 & 1.9835 & $1.6476 \cdot 10^{-2}$ & $1.6586 \cdot 10^{-2}$ & 2.0001 & $-1.0952 \cdot 10^{-4}$ & - \\
+12 & 1.9886 & $1.1436 \cdot 10^{-2}$ & $1.1489 \cdot 10^{-2}$ & 2.0001 & $-5.2624 \cdot 10^{-5}$ & $-5.4038 \cdot 10^{-5}$ \\
+14 & 1.9916 & $8.3996 \cdot 10^{-3}$ & $8.4279 \cdot 10^{-3}$ & 2.0000 & $-2.8344 \cdot 10^{-5}$ & - \\
+16 & 1.9936 & $6.4297 \cdot 10^{-3}$ & $6.4462 \cdot 10^{-3}$ & 2.0000 & $-1.6591 \cdot 10^{-5}$ & $-1.6839 \cdot 10^{-5}$ \\
+18 & 1.9949 & $5.0795 \cdot 10^{-3}$ & $5.0899 \cdot 10^{-3}$ & 2.0000 & $-1.0348 \cdot 10^{-5}$ & - \\
+20 & 1.9959 & $4.1140 \cdot 10^{-3}$ & $4.1208 \cdot 10^{-3}$ & 2.0000 & $-6.7844 \cdot 10^{-6}$ & $-6.8489 \cdot 10^{-6}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\vspace{0.8cm}
+% --- INIZIO SEZIONE 5.3 DELL'INDICE ---
+\subsection{Formule adattative}
+
+Possiamo specializzare ulteriormente questa stima dell'errore di quadratura, per ottenere delle formule di quadratura di tipo adattivo.
+
+Il problema è il seguente: talora la funzione integranda ha un comportamento che è variabile (talora anche molto) in sottointervalli dell'intervallo di integrazione. In questo caso può essere conveniente utilizzare dei punti distribuiti non uniformemente, ma adattati al comportamento locale di $f(x)$. Il fine è, pertanto, quello di soddisfare un prescritto criterio di accuratezza con un numero di punti minore possibile.
+
+\textbf{Esempio:}
+\begin{equation}
+\int_{1/2}^{100} -2x^{-3}\cos(x^{-2})dx \equiv \sin(10^{-4}) - \sin(4)
+\end{equation}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}
+        \begin{semilogxaxis}[
+            width=0.9\textwidth, height=7cm,
+            xmin=0.5, xmax=100,
+            ymin=-2, ymax=14,
+            xlabel={$x$},
+            xtick={1, 10, 100},
+            ytick={-2, 0, 2, 4, 6, 8, 10, 12, 14},
+            axis lines=box,
+            tick align=inside,
+            thick
+        ]
+            \addplot[thick, color=black, samples=250, domain=0.5:100] {-2*x^(-3)*cos(deg(x^(-2)))};
+        \end{semilogxaxis}
+    \end{tikzpicture}
+    \caption{Comportamento fortemente oscillante della funzione vicino all'origine.}
+\end{figure}
+
+Illustriamo questo concetto con la formula dei trapezi, di cui esaminiamo una facile implementazione, sebbene la procedura si estenda facilmente al caso di formule di base più accurate.
+
+\textbf{Problema:} calcolare $I(f)$ con una tolleranza \texttt{tol} prescritta.
+
+Applicando la formula dei trapezi su [a,b] e quella composita con $n=2$ otteniamo che:
+\begin{align*}
+I_1 &= \frac{b-a}{2}(f(a) + f(b)) \\
+I_2 &= \frac{b-a}{4}(f(a) + 2f(x_1) + f(b)) \quad \text{con } x_1 = \frac{a+b}{2}
+\end{align*}
+
+Abbiamo visto che la stima dell'errore è ottenibile come (essendo per i trapezi $k=1, \mu=1 \implies 2^{1+1}-1 = 3$):
+\begin{equation*}
+E_{12} = \frac{|I_2 - I_1|}{3}
+\end{equation*}
+
+A questo punto:
+\begin{enumerate}
+    \item Se $E_{12} \le \text{tol}$, ho finito $\implies I_2$
+    \item Altrimenti, riapplico la stessa procedura su $[a, x_1]$ e $[x_1, b]$ con tolleranza $\text{tol}/2$.
+\end{enumerate}
+
+L'accortezza nell'implementare questa procedura è quella di \textbf{evitare valutazioni funzionali ridondanti} della funzione integranda. Infatti, nel caso 2 abbiamo già calcolato $f(a)$, $f(x_1)$ e $f(b)$ che, pertanto, non andranno ricalcolati.
+
+Ad esempio, per l'integrale visto in precedenza, con tolleranza prescritta (tol = $10^{-3}$), l'algoritmo adattivo concentra i punti di valutazione laddove la funzione varia maggiormente (vicino all'origine):
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}
+        \begin{semilogxaxis}[
+            width=0.9\textwidth, height=7cm,
+            xmin=0.5, xmax=100,
+            ymin=-2, ymax=14,
+            xlabel={$x$},
+            xtick={1, 10, 100},
+            ytick={-2, 0, 2, 4, 6, 8, 10, 12, 14},
+            axis lines=box,
+            tick align=inside
+        ]
+            % Simulazione della densità dei nodi adattivi: fitti a sinistra, sparsi a destra
+            \addplot[only marks, mark=+, draw=red!80!black, thick, samples=100, domain=0.5:2] {-2*x^(-3)*cos(deg(x^(-2)))};
+            \addplot[only marks, mark=+, draw=red!80!black, thick, samples=40, domain=2:10] {-2*x^(-3)*cos(deg(x^(-2)))};
+            \addplot[only marks, mark=+, draw=red!80!black, thick, samples=15, domain=10:100] {-2*x^(-3)*cos(deg(x^(-2)))};
+        \end{semilogxaxis}
+    \end{tikzpicture}
+    \caption{Distribuzione dei punti di quadratura adattiva: si infittiscono dove la funzione è più critica.}
+\end{figure}
+
+Mediante una semplice implementazione in Matlab, lo script risultante è il seguente:
+
+\begin{verbatim}
+function I2 = trapead(fun, a, b, tol, fa, fb)
+% I2 = trapead(fun, a, b, tol)
+% Calcolo l'integrale di fun in [a,b] con tolleranza tol
+%
+% < Controlli di consistenza >
+
+if nargin == 4
+    fa = fun(a);
+    fb = fun(b);
+end
+
+x1 = (a+b)/2;
+f1 = fun(x1);
+h = (b-a)/2;
+
+I1 = (fa+fb)*h;
+I2 = (fa+2*f1+fb)*h/2;
+err = abs(I2-I1)/3;
+
+if err > tol
+    I2 = trapead(fun, a, x1, tol/2, fa, f1) + ...
+         trapead(fun, x1, b, tol/2, f1, fb);
+end
+
+return
+\end{verbatim}
